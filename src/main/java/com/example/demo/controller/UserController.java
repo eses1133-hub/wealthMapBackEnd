@@ -2,11 +2,13 @@ package com.example.demo.controller;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.demo.dto.UserProfileDTO;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.vo.AppResponse;
@@ -25,10 +27,22 @@ public class UserController {
             return AppResponse.error(RspCode.UNAUTHORIZED);
         }
         
-        String email = authentication.name();
+        String email = authentication.getName();
         return userRepository.findByEmail(email)
                 .map(AppResponse::success)
                 .orElse(AppResponse.error(RspCode.NOT_FOUND, "User not found"));
     }
 
+    @GetMapping("/by-email")
+    public AppResponse<UserProfileDTO> getUserByEmail(@RequestParam("email") String email) {
+
+        return userRepository.findByEmail(email)
+                .map(user -> {
+                    UserProfileDTO dto = new UserProfileDTO();
+                    dto.setName(user.getName());
+                    dto.setEmail(user.getEmail());
+                    return AppResponse.success(dto);
+                })
+                .orElse(AppResponse.error(RspCode.NOT_FOUND, "User not found"));
+    }
 }
