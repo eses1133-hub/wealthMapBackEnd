@@ -59,6 +59,10 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FinancialGoal> financialGoals = new ArrayList<>();
     
+    // 一個使用者可以擁有很多次蒙地卡羅模擬紀錄
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MonteCarloSimulation> monteCarloSimulations = new ArrayList<>();
+    
     //資料存進DB前，自動設定時間
     @PrePersist
     public void prePersist() {

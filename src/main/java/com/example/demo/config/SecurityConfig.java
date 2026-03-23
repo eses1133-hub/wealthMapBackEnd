@@ -55,7 +55,7 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 // 2. 票務大廳 (Login/Register)：每個人都能進去，不然沒辦法買票
                 .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/**","/api/monte/**").permitAll()
                 // 3. 園區服務台 (Error)：放行
                 .requestMatchers("/error").permitAll()
                 // 4. 管理員辦公室：只有「園區經理」(ADMIN) 才能進
