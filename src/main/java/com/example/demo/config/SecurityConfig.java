@@ -79,13 +79,15 @@ public class SecurityConfig {
     	http
             .csrf(csrf -> csrf.disable()) // 關掉 CSRF（測試用）
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll() // 開放這個 API
-                .requestMatchers("/profile").authenticated()
-                .requestMatchers("/by-email").permitAll()
-                .anyRequest().authenticated()
+//                .requestMatchers("/api/auth/**").permitAll() // 開放這個 API
+//                .requestMatchers("/profile").authenticated()
+//                .requestMatchers("/by-email").permitAll()
+//                .requestMatchers("/api/health").permitAll()
+//                .anyRequest().authenticated()
+            .anyRequest().permitAll() // ⭐全部開放
             );
         
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+//        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
        
         return http.build();
     }
