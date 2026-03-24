@@ -3,11 +3,8 @@ package com.example.demo.entity;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-<<<<<<< Updated upstream
 
 import lombok.Data;
-=======
->>>>>>> Stashed changes
 import lombok.Getter;
 import lombok.Setter;
 import jakarta.persistence.CascadeType;
@@ -22,10 +19,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users")
-<<<<<<< Updated upstream
 @Data
-=======
->>>>>>> Stashed changes
 @Getter
 @Setter
 public class User {
@@ -37,11 +31,7 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name; //使用者名稱
 
-<<<<<<< Updated upstream
     @Column(nullable = false,unique = true)
-=======
-    @Column(nullable = false,unique = true, length = 100)
->>>>>>> Stashed changes
     private String email; //使用者EMAIL
 
     @Column(nullable = false, length = 255)
@@ -50,12 +40,9 @@ public class User {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     
-<<<<<<< Updated upstream
     @Column(nullable = false)
 	private String role; // 使用者角色 (例如: "USER", "ADMIN")
     
-=======
->>>>>>> Stashed changes
     //一個user可擁有很多資產，cascade = CascadeType.ALL=級聯操作
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
         private List<Asset> assets = new ArrayList<>();
@@ -72,13 +59,6 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FinancialGoal> financialGoals = new ArrayList<>();
     
-<<<<<<< Updated upstream
-    // 一個使用者可以擁有很多次蒙地卡羅模擬紀錄
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MonteCarloSimulation> monteCarloSimulations = new ArrayList<>();
-    
-=======
->>>>>>> Stashed changes
     //資料存進DB前，自動設定時間
     @PrePersist
     public void prePersist() {
