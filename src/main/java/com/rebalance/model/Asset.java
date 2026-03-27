@@ -6,9 +6,9 @@ public class Asset {
     private double currentPrice;
     private int sharesOwned;
     private double targetPercentage;
-    private String suggestion; // 用來存計算結果
+    private String suggestion;
 
-    // Getter 和 Setter (一定要有，否則 Jackson 轉換會失敗)
+    // Getter 和 Setter 必須完整，Jackson 才能正常運作
     public String getSymbol() { return symbol; }
     public void setSymbol(String symbol) { this.symbol = symbol; }
     public String getName() { return name; }

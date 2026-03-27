@@ -4,30 +4,28 @@ import com.rebalance.model.Asset;
 import com.rebalance.service.RebalanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*") // 允許前端存取
 public class RebalanceController {
 
     @Autowired
     private RebalanceService rebalanceService;
 
+    // 新增：供前端搜尋股票名稱的 API
+    @GetMapping("/search")
+    public List<Map<String, String>> search(@RequestParam String q) {
+        return rebalanceService.searchStocks(q);
+    }
+
+    // 原有：執行再平衡試算的 API
     @PostMapping("/calculate")
     public List<Asset> calculate(@RequestBody Map<String, Object> payload) {
-        ObjectMapper mapper = new ObjectMapper();
-        
-        // 1. 轉換 Portfolio 列表
-        List<Asset> portfolio = mapper.convertValue(payload.get("portfolio"), 
-            mapper.getTypeFactory().constructCollectionType(List.class, Asset.class));
-        
-        // 2. 轉換目標總價值
+        List<Asset> portfolio = (List<Asset>) payload.get("portfolio");
         double targetTotalValue = Double.parseDouble(payload.get("targetTotalValue").toString());
-
-        // 3. 呼叫 Service 並回傳 (這裡現在應該不會有紅線了！)
         return rebalanceService.calculate(portfolio, targetTotalValue);
     }
 }
