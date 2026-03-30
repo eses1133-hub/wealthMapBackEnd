@@ -4,6 +4,22 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import com.example.demo.dto.NotificationListDTO;
+import com.example.demo.entity.Notification;
+import com.example.demo.repository.NotificationRepository;
+
 @Service
 public class NotificationService {
 	// 核心：用來存放 userId -> SseEmitter 的對應關係
@@ -42,4 +58,50 @@ public class NotificationService {
 			}
 		}
 	}
+
+	// 這裡是系統發送通知的service
+	@Autowired
+    private NotificationRepository repository;
+
+    // 1. 取得列表
+    public List<Notification> getNotificationList() {
+        return repository.findAllByOrderByScheduledDateDesc();
+    }
+
+    // 2. 儲存或更新
+    public Notification saveNotification(NotificationListDTO dto) {
+        Notification entity;
+
+        if (dto.getId() != null) {
+            entity = repository.findById(dto.getId())
+                    .orElseThrow(() -> new RuntimeException("找不到該筆公告"));
+        } else {
+            entity = new Notification();
+        }
+
+        entity.setTag(dto.getTag());
+        entity.setTitle(dto.getTitle());
+        entity.setContent(dto.getContent());
+
+        // 💡 關鍵就在這行！ 
+        // 你的 DTO 變數叫 scheduledDate，所以這裡必須是 getScheduledDate()
+        // 絕對不能出現 getScheduledTime()
+        entity.setScheduledDate(dto.getScheduledDate() == null ? 
+                               LocalDate.now() : dto.getScheduledDate());
+
+        return repository.save(entity);
+    }
+
+    // 3. 刪除
+    public void deleteNotification(Long id) {
+        repository.deleteById(id);
+    }
+    
+    @Autowired
+    private NotificationRepository notificationRepository;
+
+    public Notification findById(Long id) {
+        // 使用 .orElse(null) 處理找不到資料的情況
+        return repository.findById(id).orElse(null);
+    }
 }

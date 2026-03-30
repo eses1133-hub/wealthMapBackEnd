@@ -24,10 +24,8 @@ public class EmailController {
 		}
 	}
 
-
 	@GetMapping("/")
 	public String home() {
 		return "Welcome to the Email Service!";
 	}
-
 }

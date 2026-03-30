@@ -53,6 +53,7 @@ public class AuthService {
 
         // 第二步：核對無誤，將你的狀態標註為「已在園內活動中」
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        System.out.println("AUTH: " + SecurityContextHolder.getContext().getAuthentication());
         
         userRepository.findByEmail(loginDTO.getEmail()).ifPresent(user -> {
             if (userRepository.count() == 1 && "USER".equals(user.getRole())) {
