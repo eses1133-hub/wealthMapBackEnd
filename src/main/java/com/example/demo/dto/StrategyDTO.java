@@ -1,13 +1,17 @@
 package com.example.demo.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 // @Builder 是 Lombok 套件提供的一個註解。
 // 主要作用是**「流式接口 (Fluent Interface)」**的方式來創建物件，而不是用傳統又長又臭的建構子（Constructor）。
 
 @Data
 @Builder
+@NoArgsConstructor  // 自動生成無參數建構子
+@AllArgsConstructor // 自動生成全參數建構子
 public class StrategyDTO {
 	private String symbol;      // 股票代號
     private double currentPrice; // 最新價格 (P_today)

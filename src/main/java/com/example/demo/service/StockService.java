@@ -30,6 +30,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 //負責「搬運」。它只管從網路（FinMind）抓資料，然後存進資料庫。它不需要知道什麼是 MA20。
@@ -62,6 +63,10 @@ public class StockService {
 	@Autowired
     private EmailService emailService;
 	
+	// 注入 SSE 服務
+	@Autowired
+	private NotificationService notificationService;
+	
 	/**
 	 * 核心業務邏輯：執行 API 抓取 此方法為 Public，可供 Controller 手動呼叫，也可供 @Scheduled 自動呼叫
 	 */
@@ -85,15 +90,45 @@ public class StockService {
         // 2. 針對每個代號進行 API 呼叫
         symbols.forEach(symbol -> {
             try {
-                fetchAndSaveBySymbol(symbol, startDate, today);
+            	fetchAndSaveBySymbol(symbol);
+//                fetchAndSaveBySymbol(symbol, startDate, today);
             } catch (Exception e) {
                 log.error("抓取股票 {} 時發生錯誤: {}", symbol, e.getMessage());
             }
         });
 		
 	}
+	private void fetchAndSaveBySymbol(String symbol) {
+//	private void fetchAndSaveBySymbol(String symbol, String startDate, String endDate) {
+		// 判斷資料庫存量
+	    long count = stockPriceRepository.countBySymbol(symbol);
+	    
+	    String today = LocalDate.now().toString();
+	    String startDate;
+	    
+	    if (count < 20) {
+	        // --- 情況 A：冷啟動模式 (資料不足 20 筆) ---
+	        // 抓 45 天是為了確保包含週末與節日後，能湊齊 20 個交易日
+	        startDate = LocalDate.now().minusDays(45).toString();
+	        log.info(">>> 股票 {} 歷史資料不足 ({} 筆)，執行完整抓取模式。", symbol, count);
+	    } else {
+	        // --- 情況 B：增量更新模式 (已有基礎資料) ---
+	        // 建議抓「過去 5 天」而不是 1 天，這是為了防止連假、颱風假或系統排程斷掉
+	        startDate = LocalDate.now().minusDays(5).toString();
+	        log.info(">>> 股票 {} 已有基礎資料，執行增量更新模式。", symbol);
+	    }
+	    
+	    // API 呼叫邏輯不變，使用動態產生的 startDate
+	    executeRealApiCall(symbol, startDate, today);
+		
+	}
 	
-	private void fetchAndSaveBySymbol(String symbol, String startDate, String endDate) {
+	/**
+     * 封裝後的 executeRealApiCall
+     * 現在它的職責是：1. 設定API，並呼叫API  2. 存入資料
+     */
+	private void executeRealApiCall(String symbol, String startDate, String endDate) {
+		
 		// --- B. 設定請求標頭 (Headers) ---
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Authorization", "Bearer " + API_TOKEN);
@@ -121,7 +156,8 @@ public class StockService {
 						log.info("日期: {} | 開盤: {} | 最高: {} | 最低: {} | 收盤: {}", s.getDate(), s.getOpen(), s.getMax(),
 								s.getMin(), s.getClose());
 					});
-
+					
+					// 將 DTO 轉換為 Entity，並過濾掉資料庫已存在的日期
 					List<StockPrice> newStockPrice = stockList.stream().map(s -> {
 						StockPrice stock = new StockPrice();
 						stock.setSymbol(s.getStockId());
@@ -133,14 +169,16 @@ public class StockService {
 						return stock;
 
 					}).filter(stock -> !stockPriceRepository.existsBySymbolAndDate(stock.getSymbol(), stock.getDate()))
-							.collect(Collectors.toList());
+					  .collect(Collectors.toList());
 
+					// 執行批量存檔
 					if (!newStockPrice.isEmpty()) {
 						stockPriceRepository.saveAll(newStockPrice);
 						log.info(">>> 成功存入 {} 筆新資料！", newStockPrice.size());
 						
-						// --- 呼叫封裝好的檢查機制 ---
-			            this.checkAndNotifyStrategy(symbol);
+						// 資料存完後，觸發計算乖離率與通知
+//					    this.checkAndNotifyStrategy(symbol);
+			            // 若需要跑過去20筆資料，可先將上方function註解
 					} else {
 						log.info(">>> 資料已存在，本次無須更新。");
 					}
@@ -156,9 +194,172 @@ public class StockService {
 	
 	
 	/**
-     * 針對特定股票，檢查所有使用者的設定
+     * 修改後的 checkAndNotifyStrategy
+     * 現在它的職責是：1. 算好乖離率存入資料庫 2. 觸發警報判斷
      */
     public void checkAndNotifyStrategy(String symbol) {
+        try {
+            // Step 1: 計算並將乖離率紀錄回 StockPrice 表
+            StrategyDTO currentData = updateStockBias(symbol);
+            
+            if (currentData == null) return;
+
+            // Step 2: 處理所有訂閱此股票的使用者通知邏輯
+            processUserAlerts(symbol, currentData);
+
+        } catch (Exception e) {
+            log.error(">>> 處理股票 {} 的策略更新時發生異常: {}", symbol, e.getMessage());
+        }
+    }
+	
+    
+    /**
+     * 功能 A: 計算乖離率並存回資料庫
+     * 這樣網頁之後直接讀取 StockPrice 就能拿到 bias，不用重算。
+     */
+    private StrategyDTO updateStockBias(String symbol) {
+        // 呼叫 StrategyService 計算當前乖離率 (門檻給 0 因為只是要拿數值)
+        StrategyDTO result = strategyService.calculateMa20Strategy(symbol, 0.0, 0.0);
+        
+        if (result != null) {
+        	// 找出資料庫中最近的一筆紀錄
+        	stockPriceRepository.findFirstBySymbolOrderByDateDesc(symbol)
+            .ifPresent(latestPrice -> {
+                latestPrice.setBias(result.getBias()); // 存入乖離率
+                stockPriceRepository.save(latestPrice);
+                log.info(">>> 股票 {} [日期:{}] 乖離率已更新: {}%", 
+                    symbol, latestPrice.getDate(), result.getBias() * 100);
+            });
+            
+        }
+        return result;
+    }
+
+	/**
+	 * 功能 B: 判斷是否符合寄送標準並執行寄送
+	 */
+	private void processUserAlerts(String symbol, StrategyDTO currentData) {
+		// 1. 找出所有訂閱這支股票且啟用的設定
+		List<StrategySetting> activeSettings = strategySettingRepository.findBySymbolAndIsActiveTrue(symbol);
+
+		if (activeSettings.isEmpty()) {
+			log.info(">>> 股票 {} 目前沒有啟用的使用者設定，跳過檢查。", symbol);
+			return;
+		}
+
+		for (StrategySetting setting : activeSettings) {
+			// 判斷當前乖離率是否超過該使用者的自訂門檻
+			// 這裡直接用剛才算好的 currentData 進行比較，不用再進 Service 算 MA20 了
+			boolean shouldBuy = currentData.getBias() * 100 <= setting.getBuyThreshold();
+			boolean shouldSell = currentData.getBias() * 100 >= setting.getSellThreshold();
+
+			// 如果達到門檻且需要觸發
+			if (shouldBuy || shouldSell) {
+				// 【執行發送】 by mail
+				executeEmailNotification(setting, currentData, shouldBuy ? "建議加碼" : "建議減碼");
+				// by SSE/WEB_PUSH
+				executeSseNotification(setting, currentData, shouldBuy ? "建議加碼" : "建議減碼");
+			}
+		}
+	}
+
+    /**
+     * 功能 C: 執行郵件寄送 (原有的 Log 與 Email 邏輯)
+     */
+    private void executeEmailNotification(StrategySetting setting, StrategyDTO result, String action) {
+        // 檢查今天發過沒
+		boolean alreadyNotified = alertLogRepository.existsByUserIdAndTargetIdAndCategoryAndAlertTimeAfter(
+				setting.getUser().getId(), 
+				setting.getSymbol(), 
+				AlertLog.AlertCategory.STOCK_STRATEGY,
+				LocalDate.now().atStartOfDay());
+
+        if (!alreadyNotified) {
+        	// 【預約提醒】先存入 Log 並標記為 PENDING
+            AlertLog pendingLog = new AlertLog();
+            pendingLog.setUser(setting.getUser());
+            pendingLog.setTargetId(setting.getSymbol());
+            pendingLog.setCategory(AlertLog.AlertCategory.STOCK_STRATEGY);
+            pendingLog.setTitle("【WealthMap】" + setting.getSymbol() + " 策略觸發：" + action);
+            pendingLog.setContent(String.format("現價：%.2f，MA20：%.2f，乖離率：%.2f%%，建議：%s", 
+                result.getCurrentPrice(), result.getMa20(), result.getBias() * 100, action));
+            pendingLog.setChannel(AlertLog.NotificationChannel.EMAIL);
+            pendingLog.setStatus(AlertLog.AlertStatus.PENDING);
+            pendingLog.setAlertTime(LocalDateTime.now());
+
+            AlertLog savedLog = alertLogRepository.save(pendingLog);
+            emailService.sendStrategyEmail(setting.getUser().getEmail(), savedLog);
+            log.info(">>> 已寄送通知給使用者 {}: 股票 {}", setting.getUser().getId(), setting.getSymbol());
+        }
+    }
+    
+    
+    /**
+     * 功能 D: 執行個人通知 (SSE / WEB_PUSH)
+     * 仿照 Email 邏輯：先存 Log 確保不漏失，再執行推播
+     */
+    private void executeSseNotification(StrategySetting setting, StrategyDTO result, String action) {
+    	// 1. 檢查今日是否已發過該股票的網頁通知 (避免重複洗板)
+        boolean alreadyNotified = alertLogRepository.existsByUserIdAndTargetIdAndCategoryAndAlertTimeAfter(
+            setting.getUser().getId(), 
+            setting.getSymbol(), 
+            AlertLog.AlertCategory.STOCK_STRATEGY, 
+            LocalDate.now().atStartOfDay()
+        );
+
+        if (alreadyNotified) {
+            log.info(">>> 使用者 {} 的股票 {} 今日已發過網頁通知，跳過。", setting.getUser().getId(), setting.getSymbol());
+            return;
+        }
+
+        // 2. 準備 Log 紀錄 (PENDING)
+        AlertLog pendingLog = new AlertLog();
+        pendingLog.setUser(setting.getUser());
+        pendingLog.setTargetId(setting.getSymbol());
+        pendingLog.setCategory(AlertLog.AlertCategory.STOCK_STRATEGY);
+        pendingLog.setTitle("【加減碼策略通知】" + setting.getSymbol() + " " + action);
+        
+        String message = String.format(
+            "股票: %s, 目前價格: %.2f, 乖離率: %.2f%%, 建議: %s (門檻: %.2f)",
+            setting.getSymbol(),
+            result.getCurrentPrice(),
+            result.getBias() * 100,
+            action,
+            action.equals("建議加碼") ? setting.getBuyThreshold() : setting.getSellThreshold()
+        );
+        pendingLog.setContent(message);
+        pendingLog.setChannel(AlertLog.NotificationChannel.WEB_PUSH); // 標記為網頁通知
+        pendingLog.setStatus(AlertLog.AlertStatus.PENDING);
+        pendingLog.setAlertTime(LocalDateTime.now());
+        pendingLog.setRead(false); // 初始為未讀
+
+        // 先存入資料庫取得 ID
+        AlertLog savedLog = alertLogRepository.save(pendingLog);
+
+        try {
+            // 3. 執行 SSE 實時推播
+            String userIdStr = String.valueOf(setting.getUser().getId());
+            notificationService.sendNotification(userIdStr, message);
+
+            // 4. 推播成功，更新 Log 狀態
+            savedLog.setStatus(AlertLog.AlertStatus.SENT);
+            alertLogRepository.save(savedLog);
+            log.info(">>> SSE 成功發送至用戶 {}: {}", userIdStr, setting.getSymbol());
+
+        } catch (Exception e) {
+            // 5. 推播失敗，記錄錯誤訊息
+            savedLog.setStatus(AlertLog.AlertStatus.FAILED);
+            savedLog.setErrorMessage("SSE 發送異常: " + e.getMessage());
+            alertLogRepository.save(savedLog);
+            log.error(">>> SSE 發送失敗: {}", e.getMessage());
+        }
+    	
+    }
+	
+	/**
+     * 針對特定股票，檢查所有使用者的設定
+     */
+    public void checkAndNotifyStrategy_old(String symbol) {
         // 1. 找出所有訂閱這支股票且啟用的設定
         List<StrategySetting> activeSettings = strategySettingRepository.findBySymbolAndIsActiveTrue(symbol);
         
@@ -221,16 +422,37 @@ public class StockService {
 	 * 專供前端彈窗呼叫：取得特定股票的現價與乖離率
 	 */
 	public StrategyDTO getQuickQuote(String symbol) {
-	    // 1. 確保資料庫裡有最新的資料 (或者直接呼叫 fetch 抓一次最新的)
-	    // 這裡我們先假設資料庫已有資料，直接計算
-	    
-	    // 門檻值暫設為 0，因為我們現在只想拿價格跟乖離率，不需觸發通知
-	    try {
+		try {
+	        // 1. 嘗試從資料庫拿現成的（最快）
+	        Optional<StockPrice> latestOpt = stockPriceRepository.findFirstBySymbolOrderByDateDesc(symbol);
+
+	        if (latestOpt.isPresent() && latestOpt.get().getBias() != null) {
+	            return convertToDTO(latestOpt.get());
+	        }
+
+	        // 2. 【死結排除】如果資料庫沒資料，或是資料還沒算過 bias
+	        log.info(">>> 偵測到新股票或資料不完整: {}，啟動即時補課...", symbol);
+	        
+	        // 呼叫我們之前封裝好的「模式判斷」抓取邏輯
+	        // 這會去 FinMind 抓 45 天資料並存入資料庫
+	        this.fetchAndSaveBySymbol(symbol); 
+
+	        // 3. 抓完存好後，現在資料庫有資料了，再叫 Service 算一次
 	        return strategyService.calculateMa20Strategy(symbol, 0.0, 0.0);
+
 	    } catch (Exception e) {
-	        log.error("快速取得報價失敗: {}", e.getMessage());
+	        log.error("快速取得報價失敗 ({}): {}", symbol, e.getMessage());
 	        return null;
 	    }
+	}
+	
+	// 輔助方法：將 Entity 轉為 DTO
+	private StrategyDTO convertToDTO(StockPrice latest) {
+	    StrategyDTO dto = new StrategyDTO();
+	    dto.setSymbol(latest.getSymbol());
+	    dto.setCurrentPrice(latest.getClosePrice());
+	    dto.setBias(latest.getBias());
+	    return dto;
 	}
 	
 }

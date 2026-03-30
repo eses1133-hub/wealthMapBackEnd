@@ -33,4 +33,7 @@ public class StockPrice {
 	@Column(name = "high_price")
     private Double highPrice;    // 當日最高價 (用於方案 B-2)
 	
+	@Column(name = "bias")
+    private Double bias;	// 最近20筆的均價所計算的乖離率 
+	
 }

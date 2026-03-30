@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.demo.entity.AlertLog;
 import com.example.demo.entity.AlertLog.AlertCategory;
+import com.example.demo.entity.AlertLog.NotificationChannel;
+import com.example.demo.entity.User;
 
 public interface AlertLogRepository extends JpaRepository<AlertLog, Long>{
 	/**
@@ -33,4 +35,9 @@ public interface AlertLogRepository extends JpaRepository<AlertLog, Long>{
      * 找出所有發送失敗的紀錄 (未來可以用來做手動補發功能)
      */
     List<AlertLog> findByStatus(AlertLog.AlertStatus status);
+    
+    /**
+     * 撈取某個使用者最近的 10 筆網頁通知
+     */
+    List<AlertLog> findTop10ByUserAndChannelOrderByAlertTimeDesc(User user, NotificationChannel channel);
 }

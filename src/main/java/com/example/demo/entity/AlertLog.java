@@ -42,7 +42,7 @@ public class AlertLog {
 	private LocalDateTime alertTime; // 發送時間
 
 	@Enumerated(EnumType.STRING)
-	private NotificationChannel channel; // 發送管道：EMAIL, LINE, IN_APP
+	private NotificationChannel channel; // 發送管道：EMAIL, LINE, WEB_PUSH
 
 	private boolean isRead; // 使用者是否在 App 內讀取了
 	
