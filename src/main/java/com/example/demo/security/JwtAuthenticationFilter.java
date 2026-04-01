@@ -22,7 +22,6 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-
 	private final JwtTokenProvider tokenProvider;
 	private final CustomUserDetailsService customUserDetailsService;
 
@@ -31,107 +30,52 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		this.customUserDetailsService = customUserDetailsService;
 	}
 
-	/**
-	 * 【安檢核心邏輯】
-	 */
-//	@Override
-//	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-//			throws ServletException, IOException {
-//		try {
-//			// 第一步：從遊客遞過來的封包中，尋找那個標註著 "Bearer ..." 的魔法手環
-//			String jwt = getJwtFromRequest(request);
-//
-//			// 第二步：如果找到了手環，且感應器的綠燈亮了（驗證過期與真偽）
-//			if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-//				// 第三步：讀取手環裡的資料，知道這位遊客是誰
-//				String email = tokenProvider.getUserEmailFromToken(jwt);
-//
-//				// 第四步：去後台檔案室 (UserDetailsService) 調閱他的詳細權限
-//				UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
-//
-//				// 第五步：製作一張「當前遊客活動證書」
-//				UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-//						userDetails, null, userDetails.getAuthorities());
-//				authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-//
-//				// 第六步：正式把這位遊客放進「園區活動名單」中 (SecurityContext)
-//				// 這樣接下來的設施主管就知道你是誰了。
-//				SecurityContextHolder.getContext().setAuthentication(authentication);
-//			}
-//		} catch (Exception ex) {
-//			// 手環感應異常，或是壞掉了
-//			logger.error("Could not set user authentication in Disney security context", ex);
-//		}
-//
-//		// 檢查完畢，不論你有沒有手環，我們都讓你「繼續往下走」
-//		// 但如果接下來的區域需要手環，那邊的安全地圖 (SecurityConfig) 會把你攔截下來。
-//		filterChain.doFilter(request, response);
-//	}
-
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-	        throws ServletException, IOException {
+			throws ServletException, IOException {
 
-		  // 👇👇👇 就寫在這裡（最上面）
-	    System.out.println("===== JWT DEBUG =====");
-	    System.out.println("PATH: " + request.getServletPath());
-	    System.out.println("HEADER: " + request.getHeader("Authorization"));
+		System.out.println("PATH: " + request.getServletPath());
+		System.out.println("HEADER: " + request.getHeader("Authorization"));
 
-	    String jwt = getJwtFromRequest(request);
-	    System.out.println("JWT: " + jwt);
+		String jwt = getJwtFromRequest(request);
+		System.out.println("JWT: " + jwt);
 
-	    if (jwt != null) {
-	        System.out.println("VALID: " + tokenProvider.validateToken(jwt));
-	    }
+		if (jwt != null) {
+			System.out.println("VALID: " + tokenProvider.validateToken(jwt));
+		}
 
-	    System.out.println("=====================");
-		
-		
-		
-	    // ⭐⭐⭐ 這段加在這裡（最上面）
-	    String path = request.getServletPath();
-	    if (path.startsWith("/api/auth")) {
-	        filterChain.doFilter(request, response);
-	        return;
-	    }
-	    // ⭐ 不需要 JWT 驗證的 API
-//	    if (path.equals("/register") || path.equals("/login")) {
-//	        filterChain.doFilter(request, response);
-//	        return;
-//	    }
-	    
+		System.out.println("=====================");
 
-	    try {
-	        // 第一步：從 Header 拿 token
-//	        String jwt = getJwtFromRequest(request);
+		// ⭐⭐⭐ 這段加在這裡（最上面）
+		String path = request.getServletPath();
+		if (path.startsWith("/api/auth")) {
+			filterChain.doFilter(request, response);
+			return;
+		}
 
-	        // 第二步：驗證 token
-	        if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+		try {
 
-	            String email = tokenProvider.getUserEmailFromToken(jwt);
+			if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
 
-	            UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+				String email = tokenProvider.getUserEmailFromToken(jwt);
 
-	            UsernamePasswordAuthenticationToken authentication =
-	                    new UsernamePasswordAuthenticationToken(
-	                            userDetails, null, userDetails.getAuthorities());
+				UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
 
-	            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+				UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+						userDetails, null, userDetails.getAuthorities());
 
-	            SecurityContextHolder.getContext().setAuthentication(authentication);
-	        }
+				authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-	    } catch (Exception ex) {
-	        logger.error("JWT 驗證失敗", ex);
-	    }
+				SecurityContextHolder.getContext().setAuthentication(authentication);
+			}
 
-	    filterChain.doFilter(request, response);
+		} catch (Exception ex) {
+			logger.error("JWT 驗證失敗", ex);
+		}
+
+		filterChain.doFilter(request, response);
 	}
-	
-	
-	
-	
-	
+
 	/**
 	 * 【從請求頭部提取手環內容】
 	 */
@@ -144,3 +88,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		return null;
 	}
 }
+
+/**
+ * 【安檢核心邏輯】
+ */
+//@Override
+//protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+//		throws ServletException, IOException {
+//	try {
+//		// 第一步：從遊客遞過來的封包中，尋找那個標註著 "Bearer ..." 的魔法手環
+//		String jwt = getJwtFromRequest(request);
+//
+//		// 第二步：如果找到了手環，且感應器的綠燈亮了（驗證過期與真偽）
+//		if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+//			// 第三步：讀取手環裡的資料，知道這位遊客是誰
+//			String email = tokenProvider.getUserEmailFromToken(jwt);
+//
+//			// 第四步：去後台檔案室 (UserDetailsService) 調閱他的詳細權限
+//			UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+//
+//			// 第五步：製作一張「當前遊客活動證書」
+//			UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+//					userDetails, null, userDetails.getAuthorities());
+//			authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+//
+//			// 第六步：正式把這位遊客放進「園區活動名單」中 (SecurityContext)
+//			// 這樣接下來的設施主管就知道你是誰了。
+//			SecurityContextHolder.getContext().setAuthentication(authentication);
+//		}
+//	} catch (Exception ex) {
+//		// 手環感應異常，或是壞掉了
+//		logger.error("Could not set user authentication in Disney security context", ex);
+//	}
+//
+//	// 檢查完畢，不論你有沒有手環，我們都讓你「繼續往下走」
+//	// 但如果接下來的區域需要手環，那邊的安全地圖 (SecurityConfig) 會把你攔截下來。
+//	filterChain.doFilter(request, response);
+//}

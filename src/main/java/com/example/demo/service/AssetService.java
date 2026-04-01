@@ -12,6 +12,8 @@ public class AssetService {
 	@Autowired
 	private AssetRecordRepository repository;
 	
+
+	
 	public AssetRecord save(AssetRecord record) {
 		return repository.save(record);
 	}

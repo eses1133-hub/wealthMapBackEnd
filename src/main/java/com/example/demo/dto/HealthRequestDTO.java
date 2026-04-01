@@ -15,6 +15,7 @@ public class HealthRequestDTO {
     private int carLoan;
     private int personalLoan;
     private int creditCard;
+    private double g;
     
     private int investmentSuccessRate;
 }
