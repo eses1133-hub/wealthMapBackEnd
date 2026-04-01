@@ -78,8 +78,9 @@ public class SecurityConfig {
     	
     	http
             .csrf(csrf -> csrf.disable()) // 關掉 CSRF（測試用）
-            .authorizeHttpRequests(auth -> auth
+            .authorizeHttpRequests(auth -> auth 
             		.requestMatchers("/api/notifications/**").permitAll()
+            		.requestMatchers("/api/news/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll() // 開放這個 API
                 .requestMatchers("/profile").authenticated()
                 .requestMatchers("/by-email").permitAll()

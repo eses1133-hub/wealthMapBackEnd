@@ -26,4 +26,7 @@ public class NotificationListDTO {
     private String content; // 公告內容
 
     private LocalDate scheduledDate; //排程日期
+    
+ // 這代表「對目前請求的使用者來說，這則公告是否已讀」
+    private boolean hasRead;
 }
