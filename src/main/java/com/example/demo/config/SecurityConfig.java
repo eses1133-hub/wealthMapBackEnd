@@ -95,6 +95,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                 // 6. 剩下的神祕區域，通通要檢查身分
                 .requestMatchers("/api/notifications/**").permitAll()
+                .requestMatchers("/api/news/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll() // 開放這個 API
                 .requestMatchers("/profile").authenticated()
                 .requestMatchers("/by-email").permitAll()

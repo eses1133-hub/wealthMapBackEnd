@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,9 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.example.demo.dto.NotificationListDTO;
 import com.example.demo.entity.Notification;
+import com.example.demo.entity.SystemNotificationRead;
 import com.example.demo.repository.NotificationRepository;
+import com.example.demo.repository.SystemNotificationReadRepository;
 
 @Service
 public class NotificationService {
@@ -103,5 +106,65 @@ public class NotificationService {
     public Notification findById(Long id) {
         // 使用 .orElse(null) 處理找不到資料的情況
         return repository.findById(id).orElse(null);
+    }
+    
+    @Autowired
+    private SystemNotificationReadRepository readRepository;
+
+    /**
+     * 5. 取得系統公告未讀數 (紅點數字)
+     * 邏輯：(今天以前已發布的公告總數) - (該使用者已讀的紀錄數)
+     */
+    public long getUnreadCount(Long userId) {
+        // 💡 取得今天日期
+        LocalDate today = LocalDate.now();
+        
+        // 算出「日期 <= 今天」的發布總數
+        long total = repository.countByScheduledDateLessThanEqual(today);
+        
+        // 算出該用戶在已讀表中的紀錄數
+        long readCount = readRepository.countByUserId(userId);
+        
+        // 回傳差值，Math.max 確保數字不會因為資料異常變成負數
+        return Math.max(0, total - readCount);
+    }
+
+    /**
+     * 6. 標記系統公告為已讀
+     * 當使用者點擊公告時，在 system_notification_reads 增加一筆紀錄
+     */
+    public void markAsRead(Long userId, Long notificationId) {
+        // 1. 先檢查是否已經存在紀錄，避免重複插入重複扣數
+        boolean alreadyRead = readRepository.existsByUserIdAndNotificationId(userId, notificationId);
+        
+        if (!alreadyRead) {
+            // 2. 建立新的讀取紀錄
+            SystemNotificationRead readRecord = new SystemNotificationRead();
+            readRecord.setUserId(userId);
+            readRecord.setNotificationId(notificationId);
+            // 讀取時間記錄到秒沒關係，這對紅點計算沒影響
+            readRecord.setReadAt(LocalDateTime.now());
+            
+            // 3. 儲存
+            readRepository.save(readRecord);
+        }
+    }
+    public List<NotificationListDTO> getNotificationListWithStatus(Long userId) {
+        // 1. 抓出所有公告
+        List<Notification> allNotifications = notificationRepository.findAll();
+        
+        // 2. 抓出該使用者所有已讀的 ID 清單 (假設你有一個 ReadRepository)
+        List<Long> readIds = readRepository.findNotificationIdsByUserId(userId);
+
+        // 3. 組裝成 DTO 回傳
+        return allNotifications.stream().map(n -> {
+            NotificationListDTO dto = new NotificationListDTO();
+            dto.setId(n.getId());
+            dto.setTitle(n.getTitle());
+            dto.setScheduledDate(n.getScheduledDate());
+            dto.setHasRead(readIds.contains(n.getId())); 
+            
+            return dto;
+        }).collect(Collectors.toList());
     }
 }

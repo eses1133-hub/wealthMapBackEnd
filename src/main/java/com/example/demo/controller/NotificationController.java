@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import java.util.List;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.demo.dto.NotificationListDTO;
 import com.example.demo.entity.Notification;
@@ -104,7 +106,7 @@ public class NotificationController {
     
     @Autowired
     private NotificationService notificationService;
-    
+    //5.取得單筆
     @GetMapping("/{id}")
     public ResponseEntity<AppResponse<Notification>> getNotificationById(@PathVariable("id") Long id) {
         Notification notification = notificationService.findById(id);
@@ -120,5 +122,37 @@ public class NotificationController {
         }
     }
     
+    /**
+     * 6. 取得系統公告未讀數 (GET)
+     * 💡 用於前端 Navbar 紅點顯示數字
+     */
+    @GetMapping("/unread-count")
+    public AppResponse<Long> getUnreadCount(@RequestParam("userId") Long userId) {
+        // 直接調用 service 計算 (總數 - 已讀數)
+        long count = service.getUnreadCount(userId);
+        return AppResponse.success(count);
+    }
+
+    /**
+     * 7. 標記系統公告為已讀 (POST)
+     * 💡 當使用者點擊公告內容時呼叫
+     */
+    @PostMapping("/read")
+    public AppResponse<Void> markAsRead( @RequestParam("userId") Long userId, 
+            @RequestParam("notificationId") Long notificationId) {
+        
+        service.markAsRead(userId, notificationId);
+        return AppResponse.success(null);
+    }
     
+    /**
+     * 8. 取得「包含已讀狀態」的公告列表 (GET)
+     * 💡 用於前端顯示列表，並決定是否顯示紅點
+     */
+    @GetMapping("/list-with-status")
+    public AppResponse<List<NotificationListDTO>> getListWithStatus(@RequestParam("userId") Long userId) {
+        // 💡 呼叫剛才修正過 hasRead 邏輯的 Service 方法
+        List<NotificationListDTO> list = service.getNotificationListWithStatus(userId);
+        return AppResponse.success(list);
+    }
 }
