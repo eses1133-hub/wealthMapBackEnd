@@ -26,6 +26,14 @@ public interface AlertLogRepository extends JpaRepository<AlertLog, Long>{
             AlertCategory category, 
             LocalDateTime time
             );
+	
+	boolean existsByUserIdAndTargetIdAndCategoryAndChannelAndAlertTimeAfter(
+			Long userId, 
+            String targetId, 
+            AlertCategory category, 
+            NotificationChannel channel,
+            LocalDateTime time
+            );
 	/**
      * 找出某個使用者的所有提醒歷史 (按時間降冪排序，最新的在前)
      */
@@ -40,4 +48,14 @@ public interface AlertLogRepository extends JpaRepository<AlertLog, Long>{
      * 撈取某個使用者最近的 10 筆網頁通知
      */
     List<AlertLog> findTop10ByUserAndChannelOrderByAlertTimeDesc(User user, NotificationChannel channel);
+    
+    /**
+     * 計算使用者的未讀訊息
+     */
+    long countByUser_IdAndIsReadFalseAndChannel(Long userId, AlertLog.NotificationChannel channel);
+    
+    /**
+     * 個人提醒列表 (by UserId & Channel)
+     */
+    List<AlertLog> findByUser_IdAndChannel(Long userId, AlertLog.NotificationChannel channel);
 }

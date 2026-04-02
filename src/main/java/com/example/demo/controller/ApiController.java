@@ -67,19 +67,7 @@ public class ApiController {
 	}
 	
 	
-	// 使用者是否點開通知，以標示已讀
-	@PatchMapping("/{id}/read")
-	public AppResponse<String> markAsRead(@PathVariable Long id) {
-	    return alertLogRepository.findById(id)
-	        .map(log -> {
-	            log.setRead(true);
-	            // log.setReadAt(LocalDateTime.now()); // 如果你決定不留，這行就拿掉
-	            alertLogRepository.save(log);
-	            return AppResponse.success("已讀成功");
-	        })
-	        .orElse(AppResponse.error(RspCode.NOT_FOUND,"找不到該通知紀錄"));
-	}
-
+	
 	
 
 }

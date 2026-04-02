@@ -8,23 +8,35 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.example.demo.dto.NotificationListDTO;
+import com.example.demo.entity.AlertLog;
 import com.example.demo.entity.Notification;
 import com.example.demo.entity.SystemNotificationRead;
+import com.example.demo.repository.AlertLogRepository;
 import com.example.demo.repository.NotificationRepository;
 import com.example.demo.repository.SystemNotificationReadRepository;
 
 @Service
 public class NotificationService {
+	private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
+	@Autowired
+    private NotificationRepository notificationRepository;		// 系統通知
+	
+	@Autowired
+    private AlertLogRepository alertLogRepository;       // 個人提醒 by carly
+	
 	// 核心：用來存放 userId -> SseEmitter 的對應關係
 	// 使用 ConcurrentHashMap 確保執行緒安全
 	private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
@@ -62,13 +74,11 @@ public class NotificationService {
 		}
 	}
 
-	// 這裡是系統發送通知的service
-	@Autowired
-    private NotificationRepository repository;
+	
 
     // 1. 取得列表
     public List<Notification> getNotificationList() {
-        return repository.findAllByOrderByScheduledDateDesc();
+        return notificationRepository.findAllByOrderByScheduledDateDesc();
     }
 
     // 2. 儲存或更新
@@ -76,7 +86,7 @@ public class NotificationService {
         Notification entity;
 
         if (dto.getId() != null) {
-            entity = repository.findById(dto.getId())
+            entity = notificationRepository.findById(dto.getId())
                     .orElseThrow(() -> new RuntimeException("找不到該筆公告"));
         } else {
             entity = new Notification();
@@ -92,22 +102,20 @@ public class NotificationService {
         entity.setScheduledDate(dto.getScheduledDate() == null ? 
                                LocalDate.now() : dto.getScheduledDate());
 
-        return repository.save(entity);
+        return notificationRepository.save(entity);
     }
 
     // 3. 刪除
     public void deleteNotification(Long id) {
-        repository.deleteById(id);
+    	notificationRepository.deleteById(id);
     }
-    
-    @Autowired
-    private NotificationRepository notificationRepository;
 
     public Notification findById(Long id) {
         // 使用 .orElse(null) 處理找不到資料的情況
-        return repository.findById(id).orElse(null);
+        return notificationRepository.findById(id).orElse(null);
     }
     
+    // 系統已讀紀錄表
     @Autowired
     private SystemNotificationReadRepository readRepository;
 
@@ -120,13 +128,34 @@ public class NotificationService {
         LocalDate today = LocalDate.now();
         
         // 算出「日期 <= 今天」的發布總數
-        long total = repository.countByScheduledDateLessThanEqual(today);
+        long total = notificationRepository.countByScheduledDateLessThanEqual(today);
         
         // 算出該用戶在已讀表中的紀錄數
         long readCount = readRepository.countByUserId(userId);
         
         // 回傳差值，Math.max 確保數字不會因為資料異常變成負數
         return Math.max(0, total - readCount);
+    }
+    
+    // 加入個人未讀訊息的計數 by Carly
+    public Map<String, Long> getDetailedUnreadCounts(Long userId) {
+    	// --- 1. 系統公告邏輯 (原本的邏輯) ---
+        LocalDate today = LocalDate.now();
+        long systemTotal = notificationRepository.countByScheduledDateLessThanEqual(today);
+        long systemRead = readRepository.countByUserId(userId);
+        long systemUnread = Math.max(0, systemTotal - systemRead);
+        log.info(">>> 系統公告總數 {} 筆 - 已讀公告 {} 筆 = 未讀公告 {} 筆。", systemTotal, systemRead, systemUnread);
+
+        // --- 2. 個人訊息邏輯 (AlertLog 邏輯) ---
+        // 統計該用戶 isRead 為 false 的 AlertLog
+        long personalUnread = alertLogRepository.countByUser_IdAndIsReadFalseAndChannel(userId,AlertLog.NotificationChannel.WEB_PUSH);
+
+        // --- 3. 封裝成 Map ---
+        Map<String, Long> counts = new HashMap<>();
+        counts.put("systemCount", systemUnread);
+        counts.put("personalCount", personalUnread);
+        
+        return counts;
     }
 
     /**
@@ -167,4 +196,16 @@ public class NotificationService {
             return dto;
         }).collect(Collectors.toList());
     }
+    
+    /**
+     * 取得個人提醒列表 (by UserId & Channel)
+     */
+    public List<AlertLog> getPersonalAlerts(Long userId) {
+    	// 這裡先固定為 WEB_PUSH
+        AlertLog.NotificationChannel channel = AlertLog.NotificationChannel.WEB_PUSH;
+        // 調用 Repository 查詢
+        return alertLogRepository.findByUser_IdAndChannel(userId, channel);
+    }
+    
+    
 }

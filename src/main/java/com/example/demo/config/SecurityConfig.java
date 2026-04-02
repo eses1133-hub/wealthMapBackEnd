@@ -77,15 +77,13 @@ public class SecurityConfig {
       
     	
     	http
+    		.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable()) // 關掉 CSRF（測試用）
             .authorizeHttpRequests(auth -> auth
                 // 1. 問路的人：通通放行
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/strategy-api/**").permitAll()
-                .requestMatchers("/api/strategy-set/**").permitAll()
-                .requestMatchers("/api/sse/**").permitAll()
-                .requestMatchers("/send-mail").permitAll()
                 // 2. 票務大廳 (Login/Register)：每個人都能進去，不然沒辦法買票
+                .requestMatchers("/api/sse/**").permitAll()
                 .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                 // 3. 園區服務台 (Error)：放行
                 .requestMatchers("/error").permitAll()
@@ -99,6 +97,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll() // 開放這個 API
                 .requestMatchers("/profile").authenticated()
                 .requestMatchers("/by-email").permitAll()
+                .requestMatchers("/api/strategy-api/**").permitAll()
+                .requestMatchers("/api/strategy-set/**").permitAll()
+                .requestMatchers("/send-mail").permitAll()
                 .anyRequest().authenticated()
             );
         

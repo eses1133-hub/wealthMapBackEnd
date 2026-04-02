@@ -177,7 +177,7 @@ public class StockService {
 						log.info(">>> 成功存入 {} 筆新資料！", newStockPrice.size());
 						
 						// 資料存完後，觸發計算乖離率與通知
-//					    this.checkAndNotifyStrategy(symbol);
+					    this.checkAndNotifyStrategy(symbol);
 			            // 若需要跑過去20筆資料，可先將上方function註解
 					} else {
 						log.info(">>> 資料已存在，本次無須更新。");
@@ -256,7 +256,7 @@ public class StockService {
 			// 如果達到門檻且需要觸發
 			if (shouldBuy || shouldSell) {
 				// 【執行發送】 by mail
-				executeEmailNotification(setting, currentData, shouldBuy ? "建議加碼" : "建議減碼");
+//				executeEmailNotification(setting, currentData, shouldBuy ? "建議加碼" : "建議減碼");
 				// by SSE/WEB_PUSH
 				executeSseNotification(setting, currentData, shouldBuy ? "建議加碼" : "建議減碼");
 			}
@@ -268,11 +268,13 @@ public class StockService {
      */
     private void executeEmailNotification(StrategySetting setting, StrategyDTO result, String action) {
         // 檢查今天發過沒
-		boolean alreadyNotified = alertLogRepository.existsByUserIdAndTargetIdAndCategoryAndAlertTimeAfter(
-				setting.getUser().getId(), 
-				setting.getSymbol(), 
-				AlertLog.AlertCategory.STOCK_STRATEGY,
-				LocalDate.now().atStartOfDay());
+		boolean alreadyNotified = alertLogRepository.existsByUserIdAndTargetIdAndCategoryAndChannelAndAlertTimeAfter(
+	    	    setting.getUser().getId(), 
+	    	    setting.getSymbol(), 
+	    	    AlertLog.AlertCategory.STOCK_STRATEGY, 
+	    	    AlertLog.NotificationChannel.EMAIL, // 👈 加上這個
+	    	    LocalDate.now().atStartOfDay()
+	    	);
 
         if (!alreadyNotified) {
         	// 【預約提醒】先存入 Log 並標記為 PENDING
@@ -300,12 +302,13 @@ public class StockService {
      */
     private void executeSseNotification(StrategySetting setting, StrategyDTO result, String action) {
     	// 1. 檢查今日是否已發過該股票的網頁通知 (避免重複洗板)
-        boolean alreadyNotified = alertLogRepository.existsByUserIdAndTargetIdAndCategoryAndAlertTimeAfter(
-            setting.getUser().getId(), 
-            setting.getSymbol(), 
-            AlertLog.AlertCategory.STOCK_STRATEGY, 
-            LocalDate.now().atStartOfDay()
-        );
+        boolean alreadyNotified = alertLogRepository.existsByUserIdAndTargetIdAndCategoryAndChannelAndAlertTimeAfter(
+    	    setting.getUser().getId(), 
+    	    setting.getSymbol(), 
+    	    AlertLog.AlertCategory.STOCK_STRATEGY, 
+    	    AlertLog.NotificationChannel.WEB_PUSH, // 👈 加上這個
+    	    LocalDate.now().atStartOfDay()
+    	);
 
         if (alreadyNotified) {
             log.info(">>> 使用者 {} 的股票 {} 今日已發過網頁通知，跳過。", setting.getUser().getId(), setting.getSymbol());
