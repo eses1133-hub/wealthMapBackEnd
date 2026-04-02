@@ -11,6 +11,8 @@ import com.example.demo.entity.Debt;
 import com.example.demo.repository.DebtRepository;
 import com.example.demo.service.DebtService;
 import com.example.demo.service.EmailService;
+//import com.example.demo.service.Notification;
+import com.example.demo.service.NotificationService;
 import com.example.demo.service.SseService;
 
 @Component
@@ -28,14 +30,17 @@ public class DebtScheduler {
 	@Autowired
 	private EmailService emailService;
 
-	@Scheduled(fixedRate = 100000) // 每10秒跑一次(測試用)
+	@Autowired
+	private NotificationService notificationService;
+
+	@Scheduled(fixedRate = 1000000) // 每10秒跑一次(測試用)
 	public void checkDueDebts() {
 
 		int today = LocalDate.now().getDayOfMonth();
 
 		List<Debt> debts = debtRepository.findByDueDayAndNotifyEnabledAndActive(today, true, true);
 
-//		System.out.println("今天要提醒的人數：" + debts.size());
+		System.out.println("今天要提醒的人數：" + debts.size());
 
 		for (Debt debt : debts) {
 
@@ -47,8 +52,9 @@ public class DebtScheduler {
 
 			System.out.println("發送給 userId: " + userId + " | 訊息: " + message);
 			sseService.sendMessage(userId, message);
-
 			emailService.sendSimpleEmail("chssrtan789@gmail.com", "繳款提醒", message);
+			notificationService.saveNotification(debt.getUserId(), message);
 		}
 	}
+
 }

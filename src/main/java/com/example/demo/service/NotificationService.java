@@ -4,8 +4,12 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import com.example.demo.entity.Notification;
+import com.example.demo.repository.NotificationsRepository;
 
 @Service
 public class NotificationService {
@@ -13,6 +17,11 @@ public class NotificationService {
 	// 使用 ConcurrentHashMap 確保執行緒安全
 	private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
 
+
+
+	@Autowired
+	private NotificationsRepository notificationsRepository;
+	
 	// 1. 用戶訂閱 (建立連線)
 	public SseEmitter subscribe(String userId) {
 		// 設定超時時間，0 表示無限 (或設定例如 30分鐘: 1800000L)
@@ -45,4 +54,14 @@ public class NotificationService {
 			}
 		}
 	}
+
+	public void saveNotification(Long userId, String message) {
+		Notification notification = new Notification();
+		notification.setUserId(userId);
+		notification.setContent(message);
+		notification.setIsRead(false);
+
+		notificationsRepository.save(notification);
+	}
+
 }

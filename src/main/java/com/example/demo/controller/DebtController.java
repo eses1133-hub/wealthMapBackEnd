@@ -22,13 +22,13 @@ public class DebtController {
 	@GetMapping("/test/saveDebt")
 	public String testsaveDebt() {
 		Debt debt = new Debt();
-		debt.setUserId(1L);
+		debt.setUserId(2L);
 		debt.setDebtName("星展");	
 		debt.setType("creditcard");
-		debt.setTotalAmount(40000.0);
-		debt.setPaidAmount(0.0);
-		debt.setMonthlyPayment(5000.0);
-		debt.setDueDay(1);
+		debt.setTotalAmount(120000.0);
+		debt.setPaidAmount(30000.0);
+		debt.setMonthlyPayment(3000.0);
+		debt.setDueDay(2);
 		debt.setNotifyEnabled(true);
 		debt.setActive(true);
 	
