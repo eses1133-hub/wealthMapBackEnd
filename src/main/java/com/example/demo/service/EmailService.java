@@ -19,7 +19,6 @@ public class EmailService {
     * @param body 內容
     */
    
-   
    public void sendSimpleEmail(String to, String subject, String body) {
        SimpleMailMessage message = new SimpleMailMessage();
       

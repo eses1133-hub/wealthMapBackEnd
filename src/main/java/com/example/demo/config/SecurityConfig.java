@@ -7,6 +7,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -77,13 +78,20 @@ public class SecurityConfig {
       
     	
     	http
+    	.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable()) // 關掉 CSRF（測試用）
+         // 💡 加入這行：設定為「無狀態」模式，完全依賴 Token
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth 
             		.requestMatchers("/api/notifications/**").permitAll()
             		.requestMatchers("/api/news/**").permitAll()
-                .requestMatchers("/api/auth/**").permitAll() // 開放這個 API
+            		.requestMatchers("/api/auth/send-mail").permitAll()      // 1. 發信不用登入
+            		.requestMatchers("/api/auth/login").permitAll()          // 2. 登入不用登入
+            		.requestMatchers("/api/auth/register").permitAll()       // 3. 註冊不用登入
+            		.requestMatchers("/api/auth/change-password").authenticated() // 4. 修改密碼「必須」登入
                 .requestMatchers("/profile").authenticated()
                 .requestMatchers("/by-email").permitAll()
+                .requestMatchers("/send-email").permitAll()
                 .anyRequest().authenticated()
             );
         
