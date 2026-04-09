@@ -1,10 +1,13 @@
 package com.example.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.example.demo.dto.LoginDTO;
 import com.example.demo.dto.LoginResponseDTO;
@@ -19,6 +22,20 @@ import com.example.demo.vo.RspCode;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+	
+	@Configuration
+	public class WebConfig implements WebMvcConfigurer {
+
+	    @Override
+	    public void addCorsMappings(CorsRegistry registry) {
+	        registry.addMapping("/**")
+	                .allowedOrigins("http://localhost:4200") // ✅ 必須明確指定，不能用 "*"
+	                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+	                .allowedHeaders("*")
+	                .allowCredentials(true) // ✅ 這行就是解決你報錯的關鍵
+	                .maxAge(3600); // 預檢請求(Preflight)的快取時間
+	    }
+	}
 
 	@Autowired
 	private AuthService authService;

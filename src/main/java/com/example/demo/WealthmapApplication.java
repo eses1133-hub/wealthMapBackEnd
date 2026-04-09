@@ -11,5 +11,4 @@ public class WealthmapApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(WealthmapApplication.class, args);
 	}
-	
 }

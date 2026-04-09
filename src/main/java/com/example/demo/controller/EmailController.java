@@ -16,6 +16,7 @@ public class EmailController {
 	@GetMapping("/send-mail")
 	public String sendTestMail(@RequestParam("to") String to) {
 		try {
+
 			emailService.sendSimpleEmail(to, "【繳款提醒】", "國泰本月需繳款20000，預計剩餘8個月可還清");
 			return "發送成功！請檢查信箱";
 		} catch (Exception e) {

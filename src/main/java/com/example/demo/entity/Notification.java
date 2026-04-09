@@ -1,35 +1,35 @@
 package com.example.demo.entity;
 
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
+
+import jakarta.persistence.*;
+import lombok.Data;
 
 @Entity
-@Table(name = "Notifications")
-@Setter
-@Getter
+@Table(name = "notifications")
+@Data
 public class Notification {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
-	@Column(name="user_id",nullable = false , length = 50)
+	@Column(name="user_id",nullable = false)
 	private Long userId; //誰的通知
 	
-	@Column(nullable=false,length = 100)
+    // 🔥 分類（系統 / 個人）
+    private String tag;
+
+    // 🔥 標題
+    private String title;
+
+	@Column(columnDefinition = "TEXT")
 	private String content; //誰的內容
 	
-	@Column(nullable=false)
-	private Boolean isRead; //是否已讀
+	private Boolean isRead = false;; //是否已讀
 	
 	@Column(name = "created_at",nullable = false)
 	private LocalDateTime createdAt;  //建立時間
