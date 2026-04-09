@@ -256,7 +256,7 @@ public class StockService {
 			// 如果達到門檻且需要觸發
 			if (shouldBuy || shouldSell) {
 				// 【執行發送】 by mail
-//				executeEmailNotification(setting, currentData, shouldBuy ? "建議加碼" : "建議減碼");
+				executeEmailNotification(setting, currentData, shouldBuy ? "建議加碼" : "建議減碼");
 				// by SSE/WEB_PUSH
 				executeSseNotification(setting, currentData, shouldBuy ? "建議加碼" : "建議減碼");
 			}
@@ -272,7 +272,7 @@ public class StockService {
 	    	    setting.getUser().getId(), 
 	    	    setting.getSymbol(), 
 	    	    AlertLog.AlertCategory.STOCK_STRATEGY, 
-	    	    AlertLog.NotificationChannel.EMAIL, // 👈 加上這個
+	    	    AlertLog.NotificationChannel.EMAIL, 
 	    	    LocalDate.now().atStartOfDay()
 	    	);
 
@@ -283,7 +283,7 @@ public class StockService {
             pendingLog.setTargetId(setting.getSymbol());
             pendingLog.setCategory(AlertLog.AlertCategory.STOCK_STRATEGY);
             pendingLog.setTitle("【WealthMap】" + setting.getSymbol() + " 策略觸發：" + action);
-            pendingLog.setContent(String.format("現價：%.2f，MA20：%.2f，乖離率：%.2f%%，建議：%s", 
+            pendingLog.setContent(String.format("現價：%.2f\nMA20：%.2f\n乖離率：%.2f%%\n建議：%s", 
                 result.getCurrentPrice(), result.getMa20(), result.getBias() * 100, action));
             pendingLog.setChannel(AlertLog.NotificationChannel.EMAIL);
             pendingLog.setStatus(AlertLog.AlertStatus.PENDING);
@@ -320,10 +320,10 @@ public class StockService {
         pendingLog.setUser(setting.getUser());
         pendingLog.setTargetId(setting.getSymbol());
         pendingLog.setCategory(AlertLog.AlertCategory.STOCK_STRATEGY);
-        pendingLog.setTitle("【加減碼策略通知】" + setting.getSymbol() + " " + action);
+        pendingLog.setTitle("【加減碼通知】" + setting.getSymbol() + " " + action);
         
         String message = String.format(
-            "股票: %s, 目前價格: %.2f, 乖離率: %.2f%%, 建議: %s (門檻: %.2f)",
+            "股票: %s \n目前價格: %.2f \n乖離率: %.2f%% \n建議: %s (門檻: %.2f)",
             setting.getSymbol(),
             result.getCurrentPrice(),
             result.getBias() * 100,
