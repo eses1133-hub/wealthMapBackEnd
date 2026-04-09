@@ -1,5 +1,7 @@
 package com.example.demo.config;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +19,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.example.demo.security.CustomUserDetailsService;
 import com.example.demo.security.JwtAuthenticationFilter;
 import com.example.demo.security.JwtTokenProvider;
+
+import io.jsonwebtoken.lang.Arrays;
 
 /**
  * 【迪士尼園區安全地圖】
@@ -85,6 +89,7 @@ public class SecurityConfig {
                 // 2. 票務大廳 (Login/Register)：每個人都能進去，不然沒辦法買票
                 .requestMatchers("/api/sse/**").permitAll()
                 .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                .requestMatchers("/api/auth/**","/api/monte/**").permitAll()
                 // 3. 園區服務台 (Error)：放行
                 .requestMatchers("/error").permitAll()
                 // 4. 管理員辦公室：只有「園區經理」(ADMIN) 才能進
@@ -106,6 +111,20 @@ public class SecurityConfig {
        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
        
         return http.build();
+    }
+    //CORS 跨域資源共享
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource_1() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        
+        configuration.setAllowedOrigins(List.of("http://localhost:4200")); 
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
     
     // 獲取後台的認證經理
