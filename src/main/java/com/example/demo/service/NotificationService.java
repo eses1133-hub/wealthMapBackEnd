@@ -182,7 +182,7 @@ public class NotificationService {
         // 1. 抓出所有公告
 //        List<Notification> allNotifications = notificationRepository.findAll();
     	// 💡 修正：改用有 OrderBy 的方法，確保「最新在前」
-        List<Notification> allNotifications = repository.findAllByOrderByScheduledDateDesc();
+        List<Notification> allNotifications = notificationRepository.findAllByOrderByScheduledDateDesc();
         
         // 2. 抓出該使用者所有已讀的 ID 清單 (假設你有一個 ReadRepository)
         List<Long> readIds = readRepository.findNotificationIdsByUserId(userId);
