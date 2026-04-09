@@ -1,26 +1,27 @@
 package com.example.demo.service;
 
-import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.example.demo.dto.NotificationListDTO;
 import com.example.demo.entity.AlertLog;
 import com.example.demo.entity.Notification;
 import com.example.demo.entity.SystemNotificationRead;
 import com.example.demo.repository.AlertLogRepository;
+import com.example.demo.repository.NotificationReadRepository;
 import com.example.demo.repository.NotificationRepository;
-import com.example.demo.repository.SystemNotificationReadRepository;
 
 
 @Service
@@ -32,6 +33,9 @@ public class NotificationService {
 	
 	@Autowired
     private AlertLogRepository alertLogRepository;       // 個人提醒 by carly
+	
+	@Autowired
+	private NotificationReadRepository notificationReadRepository;
 	
 	// 核心：用來存放 userId -> SseEmitter 的對應關係
 	// 使用 ConcurrentHashMap 確保執行緒安全
@@ -100,6 +104,19 @@ public class NotificationService {
 
         return notificationRepository.save(entity);
     }
+    
+    
+    public void saveNotification(Long userId, String message) {
+
+        Notification entity = new Notification();
+
+        entity.setUserId(userId); // ⚠️ 前提：你的 Entity 要有這欄位
+        entity.setTitle("繳款提醒");
+        entity.setContent(message);
+        entity.setScheduledDate(LocalDate.now());
+
+        notificationRepository.save(entity);
+    }
 
     // 3. 刪除
     public void deleteNotification(Long id) {
@@ -123,7 +140,7 @@ public class NotificationService {
         long total = notificationRepository.countByScheduledDateLessThanEqual(today);
         
         // 算出該用戶在已讀表中的紀錄數
-        long readCount = readRepository.countByUserId(userId);
+        long readCount = notificationReadRepository.countByUserId(userId);
         
         // 回傳差值，Math.max 確保數字不會因為資料異常變成負數
         return Math.max(0, total - readCount);
@@ -134,7 +151,7 @@ public class NotificationService {
     	// --- 1. 系統公告邏輯 (原本的邏輯) ---
         LocalDate today = LocalDate.now();
         long systemTotal = notificationRepository.countByScheduledDateLessThanEqual(today);
-        long systemRead = readRepository.countByUserId(userId);
+        long systemRead = notificationReadRepository.countByUserId(userId);
         long systemUnread = Math.max(0, systemTotal - systemRead);
         log.info(">>> 系統公告總數 {} 筆 - 已讀公告 {} 筆 = 未讀公告 {} 筆。", systemTotal, systemRead, systemUnread);
 
@@ -156,8 +173,7 @@ public class NotificationService {
      */
     public void markAsRead(Long userId, Long notificationId) {
         // 1. 先檢查是否已經存在紀錄，避免重複插入重複扣數
-        boolean exists  = readRepository.existsByUserIdAndNotificationId(userId, notificationId);
-        
+        boolean exists  = notificationReadRepository.existsByUserIdAndNotificationId(userId, notificationId);
         if (!exists) {
             // 2. 建立新的讀取紀錄
             SystemNotificationRead read = new SystemNotificationRead();
@@ -167,7 +183,7 @@ public class NotificationService {
             read.setReadAt(LocalDateTime.now());
             
             // 3. 儲存
-            readRepository.save(read);
+            notificationReadRepository.save(read);
         }
     }
     public List<NotificationListDTO> getNotificationListWithStatus(Long userId) {
@@ -175,10 +191,10 @@ public class NotificationService {
         List<Notification> allNotifications = notificationRepository.findAll();
         
         // 2. 抓出該使用者所有已讀的 ID 清單 (假設你有一個 ReadRepository)
-        List<Long> readIds = readRepository.findNotificationIdsByUserId(userId);
+        List<Long> readIds = notificationReadRepository.findNotificationIdsByUserId(userId);
 
         // 3. 組裝成 DTO 回傳
-        return list.stream().map(n -> {
+        return allNotifications.stream().map(n -> {
             NotificationListDTO dto = new NotificationListDTO();
             dto.setId(n.getId());
             dto.setTitle(n.getTitle());

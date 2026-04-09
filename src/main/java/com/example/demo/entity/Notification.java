@@ -34,8 +34,12 @@ public class Notification {
 	@Column(name = "created_at",nullable = false)
 	private LocalDateTime createdAt;  //建立時間
 	
+	@Column(nullable = false)
+	private LocalDate scheduledDate;
+	
 	@PrePersist
 	public void prePersist() {
 		this.createdAt = LocalDateTime.now();
 	}
+
 }
