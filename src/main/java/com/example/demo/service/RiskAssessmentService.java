@@ -15,21 +15,21 @@ public class RiskAssessmentService {
 
     private final UserRepository userRepository;
 
-    // 透過建構子注入 UserRepository
+    
     public RiskAssessmentService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
-    // 加上 @Transactional，確保寫入資料庫失敗時能自動 Rollback
+    
     @Transactional
     public StrategyResponse evaluateRisk(RiskAssessmentRequest request) {
-        // 1. 計算總分 (滿分 30 分)
+        // 1. 計算總分 
         int totalScore = request.calculateTotalScore();
 
-        // 2. 根據分數決定風險等級
+        // 2. 根據總分判定風險屬性
         RiskLevel userLevel = determineLevel(totalScore);
 
-        // 3. 儲存結果到資料庫 (根據 request 傳來的 userId)
+        // 3. 儲存結果到資料庫 
         if (request.userId() != null) {
             User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new RuntimeException("資料庫找不到此使用者 ID: " + request.userId()));
@@ -38,7 +38,7 @@ public class RiskAssessmentService {
             userRepository.save(user);    // 寫入資料庫
         }
 
-        // 4. 封裝前端第三頁需要的結果 (包含資產配置比例)
+        
         Map<String, Integer> allocation = Map.of(
             "權益型資產 (股票/基金)", userLevel.getEquityPercent(),
             "固定收益 (債券/定存)", userLevel.getBondPercent(),
@@ -54,7 +54,7 @@ public class RiskAssessmentService {
         );
     }
 
-    // 核心計分邏輯：嚴格對應你設定的區間
+    
     private RiskLevel determineLevel(int score) {
         if (score <= 10) return RiskLevel.CONSERVATIVE;
         if (score <= 15) return RiskLevel.DEFENSIVE;
