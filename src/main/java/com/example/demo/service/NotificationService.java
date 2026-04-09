@@ -1,9 +1,4 @@
 package com.example.demo.service;
-import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -25,21 +20,27 @@ import com.example.demo.entity.AlertLog;
 import com.example.demo.entity.Notification;
 import com.example.demo.entity.SystemNotificationRead;
 import com.example.demo.repository.AlertLogRepository;
+import com.example.demo.repository.NotificationReadRepository;
 import com.example.demo.repository.NotificationRepository;
-import com.example.demo.repository.SystemNotificationReadRepository;
+
 
 @Service
 public class NotificationService {
 	private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
+
 	@Autowired
     private NotificationRepository notificationRepository;		// 系統通知
 	
 	@Autowired
     private AlertLogRepository alertLogRepository;       // 個人提醒 by carly
 	
+	@Autowired
+	private NotificationReadRepository notificationReadRepository;
+	
 	// 核心：用來存放 userId -> SseEmitter 的對應關係
 	// 使用 ConcurrentHashMap 確保執行緒安全
 	private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
+
 
 	// 1. 用戶訂閱 (建立連線)
 	public SseEmitter subscribe(String userId) {
@@ -63,6 +64,7 @@ public class NotificationService {
 	// 2. 發送通知給特定用戶
 	public void sendNotification(String userId, String message) {
 		SseEmitter emitter = emitters.get(userId);
+
 		if (emitter != null) {
 			try {
 				emitter.send(SseEmitter.event().name("message") // 前端監聽的事件名稱
@@ -73,9 +75,7 @@ public class NotificationService {
 			}
 		}
 	}
-
 	
-
     // 1. 取得列表
     public List<Notification> getNotificationList() {
         return notificationRepository.findAllByOrderByScheduledDateDesc();
@@ -104,6 +104,19 @@ public class NotificationService {
 
         return notificationRepository.save(entity);
     }
+    
+    
+    public void saveNotification(Long userId, String message) {
+
+        Notification entity = new Notification();
+
+        entity.setUserId(userId); // ⚠️ 前提：你的 Entity 要有這欄位
+        entity.setTitle("繳款提醒");
+        entity.setContent(message);
+        entity.setScheduledDate(LocalDate.now());
+
+        notificationRepository.save(entity);
+    }
 
     // 3. 刪除
     public void deleteNotification(Long id) {
@@ -115,10 +128,6 @@ public class NotificationService {
         return notificationRepository.findById(id).orElse(null);
     }
     
-    // 系統已讀紀錄表
-    @Autowired
-    private SystemNotificationReadRepository readRepository;
-
     /**
      * 5. 取得系統公告未讀數 (紅點數字)
      * 邏輯：(今天以前已發布的公告總數) - (該使用者已讀的紀錄數)
@@ -131,7 +140,7 @@ public class NotificationService {
         long total = notificationRepository.countByScheduledDateLessThanEqual(today);
         
         // 算出該用戶在已讀表中的紀錄數
-        long readCount = readRepository.countByUserId(userId);
+        long readCount = notificationReadRepository.countByUserId(userId);
         
         // 回傳差值，Math.max 確保數字不會因為資料異常變成負數
         return Math.max(0, total - readCount);
@@ -142,7 +151,7 @@ public class NotificationService {
     	// --- 1. 系統公告邏輯 (原本的邏輯) ---
         LocalDate today = LocalDate.now();
         long systemTotal = notificationRepository.countByScheduledDateLessThanEqual(today);
-        long systemRead = readRepository.countByUserId(userId);
+        long systemRead = notificationReadRepository.countByUserId(userId);
         long systemUnread = Math.max(0, systemTotal - systemRead);
         log.info(">>> 系統公告總數 {} 筆 - 已讀公告 {} 筆 = 未讀公告 {} 筆。", systemTotal, systemRead, systemUnread);
 
@@ -151,11 +160,11 @@ public class NotificationService {
         long personalUnread = alertLogRepository.countByUser_IdAndIsReadFalseAndChannel(userId,AlertLog.NotificationChannel.WEB_PUSH);
 
         // --- 3. 封裝成 Map ---
-        Map<String, Long> counts = new HashMap<>();
-        counts.put("systemCount", systemUnread);
-        counts.put("personalCount", personalUnread);
+        Map<String, Long> result = new HashMap<>();
+        result.put("systemCount", systemUnread);
+        result.put("personalCount", personalUnread);
         
-        return counts;
+        return result;
     }
 
     /**
@@ -164,18 +173,17 @@ public class NotificationService {
      */
     public void markAsRead(Long userId, Long notificationId) {
         // 1. 先檢查是否已經存在紀錄，避免重複插入重複扣數
-        boolean alreadyRead = readRepository.existsByUserIdAndNotificationId(userId, notificationId);
-        
-        if (!alreadyRead) {
+        boolean exists  = notificationReadRepository.existsByUserIdAndNotificationId(userId, notificationId);
+        if (!exists) {
             // 2. 建立新的讀取紀錄
-            SystemNotificationRead readRecord = new SystemNotificationRead();
-            readRecord.setUserId(userId);
-            readRecord.setNotificationId(notificationId);
+            SystemNotificationRead read = new SystemNotificationRead();
+            read.setUserId(userId);
+            read.setNotificationId(notificationId);
             // 讀取時間記錄到秒沒關係，這對紅點計算沒影響
-            readRecord.setReadAt(LocalDateTime.now());
+            read.setReadAt(LocalDateTime.now());
             
             // 3. 儲存
-            readRepository.save(readRecord);
+            notificationReadRepository.save(read);
         }
     }
     public List<NotificationListDTO> getNotificationListWithStatus(Long userId) {
@@ -183,7 +191,7 @@ public class NotificationService {
         List<Notification> allNotifications = notificationRepository.findAll();
         
         // 2. 抓出該使用者所有已讀的 ID 清單 (假設你有一個 ReadRepository)
-        List<Long> readIds = readRepository.findNotificationIdsByUserId(userId);
+        List<Long> readIds = notificationReadRepository.findNotificationIdsByUserId(userId);
 
         // 3. 組裝成 DTO 回傳
         return allNotifications.stream().map(n -> {
@@ -192,8 +200,7 @@ public class NotificationService {
             dto.setTitle(n.getTitle());
             dto.setScheduledDate(n.getScheduledDate());
             dto.setHasRead(readIds.contains(n.getId())); 
-            
-            return dto;
+                        return dto;
         }).collect(Collectors.toList());
     }
     
@@ -201,11 +208,8 @@ public class NotificationService {
      * 取得個人提醒列表 (by UserId & Channel)
      */
     public List<AlertLog> getPersonalAlerts(Long userId) {
-    	// 這裡先固定為 WEB_PUSH
-        AlertLog.NotificationChannel channel = AlertLog.NotificationChannel.WEB_PUSH;
-        // 調用 Repository 查詢
-        return alertLogRepository.findByUser_IdAndChannel(userId, channel);
+    
+        return alertLogRepository.findByUser_IdAndChannel(userId, AlertLog.NotificationChannel.WEB_PUSH);
     }
-    
-    
+
 }

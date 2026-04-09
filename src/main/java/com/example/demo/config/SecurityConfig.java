@@ -103,7 +103,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             );
         
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+       http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
        
         return http.build();
     }

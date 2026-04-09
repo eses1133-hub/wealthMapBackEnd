@@ -48,6 +48,7 @@ public class JwtTokenProvider {
         // 像是在做餅乾一樣，把你的名字、發放時間、到期時間打包，最後蓋上「防偽印章」
         return Jwts.builder()
                 .setSubject(userPrincipal.getUsername())
+                .claim("role", "admin")
                 .setIssuedAt(new Date())
                 .setExpiration(expiryDate)
                 .signWith(key, SignatureAlgorithm.HS256)
