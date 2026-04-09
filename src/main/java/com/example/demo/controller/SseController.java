@@ -1,4 +1,8 @@
 package com.example.demo.controller;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import com.example.demo.service.NotificationService;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,11 +13,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.example.demo.service.NotificationService;
-
 @RestController
 @RequestMapping("/api/sse")
-@CrossOrigin(origins = "*") // 允許所有來源連線 (開發方便)
+@CrossOrigin(origins = "http://localhost:4200") // 允許 Angular 存取
 public class SseController {
 	private final NotificationService notificationService;
 

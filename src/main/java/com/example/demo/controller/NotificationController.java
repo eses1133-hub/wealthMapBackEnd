@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
 import java.util.List;
-
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -21,8 +22,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.demo.dto.NotificationListDTO;
+import com.example.demo.entity.AlertLog;
 import com.example.demo.entity.Notification;
+
 import com.example.demo.service.EmailService;
+import com.example.demo.repository.AlertLogRepository;
+
 import com.example.demo.service.NotificationService;
 import com.example.demo.vo.AppResponse;
 import com.example.demo.vo.RspCode;
@@ -49,7 +54,7 @@ public class NotificationController {
 	}
 
     @Autowired
-    private NotificationService service;
+    private NotificationService notificationService;	// 系統通知
 
     /**
      * 1. 取得所有公告列表 (GET)
@@ -57,7 +62,7 @@ public class NotificationController {
      */
     @GetMapping("/list")
     public AppResponse<List<Notification>> getList() {
-        List<Notification> list = service.getNotificationList();
+        List<Notification> list = notificationService.getNotificationList();
         return AppResponse.success(list);
     }
 
@@ -69,7 +74,7 @@ public class NotificationController {
     public AppResponse<Notification> save(@Valid @RequestBody NotificationListDTO dto) {
         // 新增時不應該帶有 ID
         dto.setId(null);
-        Notification saved = service.saveNotification(dto);
+        Notification saved = notificationService.saveNotification(dto);
         return AppResponse.success(saved);
     }
 
@@ -84,7 +89,7 @@ public class NotificationController {
         }
         
         try {
-            Notification updated = service.saveNotification(dto);
+            Notification updated = notificationService.saveNotification(dto);
             return AppResponse.success(updated);
         } catch (RuntimeException e) {
             return AppResponse.error(RspCode.NOT_FOUND, e.getMessage());
@@ -98,15 +103,13 @@ public class NotificationController {
     @DeleteMapping("/{id}")
     public AppResponse<Void> delete(@PathVariable("id") Long id) {
         try {
-            service.deleteNotification(id);
+            notificationService.deleteNotification(id);
             return AppResponse.success(null);
         } catch (RuntimeException e) {
             return AppResponse.error(RspCode.NOT_FOUND, e.getMessage());
         }
     }
     
-    @Autowired
-    private NotificationService notificationService;
     //5.取得單筆
     @GetMapping("/{id}")
     public ResponseEntity<AppResponse<Notification>> getNotificationById(@PathVariable("id") Long id) {
@@ -128,10 +131,20 @@ public class NotificationController {
      * 💡 用於前端 Navbar 紅點顯示數字
      */
     @GetMapping("/unread-count")
-    public AppResponse<Long> getUnreadCount(@RequestParam("userId") Long userId) {
+    public AppResponse<Long> getUnreadCountOld(@RequestParam("userId") Long userId) {
         // 直接調用 service 計算 (總數 - 已讀數)
-        long count = service.getUnreadCount(userId);
+        long count = notificationService.getUnreadCount(userId);
         return AppResponse.success(count);
+    }
+
+    /**
+     * 6. 取得通知未讀數 (GET)，新增個人未讀 (系統通知+個人通知)
+     */
+    @GetMapping("/unread-count-new")
+    public AppResponse<Map<String, Long>> getUnreadCount(@RequestParam("userId") Long userId) {
+        // 調用 service 取得 Map
+    	Map<String, Long> counts = notificationService.getDetailedUnreadCounts(userId);
+        return AppResponse.success(counts);
     }
 
     /**
@@ -142,7 +155,7 @@ public class NotificationController {
     public AppResponse<Void> markAsRead( @RequestParam("userId") Long userId, 
             @RequestParam("notificationId") Long notificationId) {
         
-        service.markAsRead(userId, notificationId);
+    	notificationService.markAsRead(userId, notificationId);
         return AppResponse.success(null);
     }
     
@@ -153,7 +166,38 @@ public class NotificationController {
     @GetMapping("/list-with-status")
     public AppResponse<List<NotificationListDTO>> getListWithStatus(@RequestParam("userId") Long userId) {
         // 💡 呼叫剛才修正過 hasRead 邏輯的 Service 方法
-        List<NotificationListDTO> list = service.getNotificationListWithStatus(userId);
+        List<NotificationListDTO> list = notificationService.getNotificationListWithStatus(userId);
         return AppResponse.success(list);
     }
+    
+	@Autowired
+    private AlertLogRepository alertLogRepository;       // 個人通知 by carly
+    
+    /**
+     * Alert Log個人通知的表
+     * 1. 使用者是否點開個人通知，以標示已讀
+     */
+ 	@PatchMapping("/{id}/read")
+ 	public AppResponse<String> markAsRead(@PathVariable("id") Long id) {
+ 	    return alertLogRepository.findById(id)
+ 	        .map(log -> {
+ 	            log.setRead(true);
+ 	            // log.setReadAt(LocalDateTime.now()); // 如果你決定不留，這行就拿掉
+ 	            alertLogRepository.save(log);
+ 	            return AppResponse.success("已讀成功");
+ 	        })
+ 	        .orElse(AppResponse.error(RspCode.NOT_FOUND,"找不到該通知紀錄"));
+ 	}
+ 	
+ 	/**
+     * 查看個人通知(Alert Log)的表
+     * 2. 取得使用者的個人通知
+     */
+ 	@GetMapping("/{userId}/personal-list")
+ 	public AppResponse<List<AlertLog>> getPersonalAlerts( @PathVariable("userId") Long userId) {
+ 	    // 調用 Repository 抓取該用戶特定的 Web_Push 訊息
+ 	    List<AlertLog> logs = notificationService.getPersonalAlerts(userId);
+ 	    return AppResponse.success(logs);
+ 	}
+
 }
