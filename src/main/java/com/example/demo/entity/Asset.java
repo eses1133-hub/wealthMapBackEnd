@@ -1,10 +1,17 @@
 package com.example.demo.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "assets")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Asset {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,6 +24,10 @@ public class Asset {
 	//資產種類，不能空白
 	@Column(nullable = false, length = 50)
 	private String type;
+	
+	//證券代碼，最長100字
+	@Column(name = "symbol", length = 100)
+	private String symbol;
 
 	//這筆資產目前的金額，不能空白
 	@Column(nullable = false)
@@ -37,48 +48,8 @@ public class Asset {
 	public void prePersist() {
 		this.createdAt = LocalDateTime.now();
 	}
-	
-	public Asset() {
-    }
 
-    public Long getId() {
-        return id;
-    }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public Double getAmount() {
-        return amount;
-    }
-
-    public void setAmount(Double amount) {
-        this.amount = amount;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
+    
 }
 
