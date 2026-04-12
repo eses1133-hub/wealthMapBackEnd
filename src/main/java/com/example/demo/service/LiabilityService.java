@@ -12,17 +12,17 @@ public class LiabilityService {
     @Autowired
     private LiabilityRepository liabilityRepo;
 
-    // 1. 新增負債
+    // 新增負債
     public Liability createLiability(Liability liability) {
         return liabilityRepo.save(liability);
     }
 
-    // 2. 查詢該使用者的所有負債
+	// 取得某使用者的所有負債
     public List<Liability> getLiabilitiesByUserId(Long userId) {
-        return liabilityRepo.findByUserId(userId);
+        return liabilityRepo.findByUser_Id(userId);
     }
 
-    // 3. 刪除負債
+    // 刪除負債
     public void deleteLiability(Long id) {
         liabilityRepo.deleteById(id);
     }

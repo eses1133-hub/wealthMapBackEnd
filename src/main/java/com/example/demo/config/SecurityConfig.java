@@ -76,12 +76,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         
-    	JwtAuthenticationFilter jwtAuthenticationFilter =
+        JwtAuthenticationFilter jwtAuthenticationFilter =
            new JwtAuthenticationFilter(tokenProvider, customUserDetailsService);
       
-    	
-    	http
-    		.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        
+        http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable()) // 關掉 CSRF（測試用）
             .authorizeHttpRequests(auth -> auth
                 // 1. 問路的人：通通放行
@@ -92,19 +92,26 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**","/api/monte/**").permitAll()
                 // 3. 園區服務台 (Error)：放行
                 .requestMatchers("/error").permitAll()
+                
+                // 🌟🌟🌟 新增：暫時放行資產與負債 API，方便開發測試 🌟🌟🌟
+                .requestMatchers("/api/assets/**", "/api/liabilities/**", "/api/goals/**").permitAll()
+                // 🌟🌟🌟 還有你之前做的風險評估，也一起確保放行 🌟🌟🌟
+                .requestMatchers("/api/risk/**").permitAll()
+
                 // 4. 管理員辦公室：只有「園區經理」(ADMIN) 才能進
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                // 5. 熱門設施：只要有手環 (USER/ADMIN) 都能玩
-                .requestMatchers("/api/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
-                // 6. 剩下的神祕區域，通通要檢查身分
+                // 5. 熱門設施：只要有手環 (USER/ADMIN) 都能玩 (注意：這行會覆蓋前面的 /api/** 邏輯，所以放行要寫在它上面)
                 .requestMatchers("/api/notifications/**").permitAll()
                 .requestMatchers("/api/news/**").permitAll()
-                .requestMatchers("/api/auth/**").permitAll() // 開放這個 API
                 .requestMatchers("/profile").authenticated()
                 .requestMatchers("/by-email").permitAll()
                 .requestMatchers("/api/strategy-api/**").permitAll()
                 .requestMatchers("/api/strategy-set/**").permitAll()
                 .requestMatchers("/send-mail").permitAll()
+                
+                // .requestMatchers("/api/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN") // 💡 建議先註解掉這行，它範圍太大了，很容易誤擋
+                
+                // 6. 剩下的神祕區域，通通要檢查身分
                 .anyRequest().authenticated()
             );
         
