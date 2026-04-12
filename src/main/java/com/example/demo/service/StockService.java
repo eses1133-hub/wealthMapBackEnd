@@ -27,6 +27,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -225,10 +228,14 @@ public class StockService {
         	// 找出資料庫中最近的一筆紀錄
         	stockPriceRepository.findFirstBySymbolOrderByDateDesc(symbol)
             .ifPresent(latestPrice -> {
-                latestPrice.setBias(result.getBias()); // 存入乖離率
+            	// 將乖離率四捨五入到小數點後四位 (因為 0.0123 代表 1.23%)
+                double roundedBias = BigDecimal.valueOf(result.getBias())
+                    .setScale(4, RoundingMode.HALF_UP)
+                    .doubleValue();
+                latestPrice.setBias(roundedBias); // 存入乖離率
                 stockPriceRepository.save(latestPrice);
                 log.info(">>> 股票 {} [日期:{}] 乖離率已更新: {}%", 
-                    symbol, latestPrice.getDate(), result.getBias() * 100);
+                    symbol, latestPrice.getDate(), roundedBias * 100);
             });
             
         }
@@ -253,12 +260,22 @@ public class StockService {
 			boolean shouldBuy = currentData.getBias() * 100 <= setting.getBuyThreshold();
 			boolean shouldSell = currentData.getBias() * 100 >= setting.getSellThreshold();
 
+			String action = null;
+			// 優先判斷減碼 (停利通常優先級較高)
+		    if (shouldSell) {
+		        action = "建議減碼";
+		    } 
+		    // 如果沒達到減碼，再看是否達到加碼
+		    else if (shouldBuy) {
+		        action = "建議加碼";
+		    }
+		    
 			// 如果達到門檻且需要觸發
-			if (shouldBuy || shouldSell) {
+		    if (action != null) {
 				// 【執行發送】 by mail
-				executeEmailNotification(setting, currentData, shouldBuy ? "建議加碼" : "建議減碼");
+				executeEmailNotification(setting, currentData, action);
 				// by SSE/WEB_PUSH
-				executeSseNotification(setting, currentData, shouldBuy ? "建議加碼" : "建議減碼");
+				executeSseNotification(setting, currentData, action);
 			}
 		}
 	}
@@ -455,6 +472,7 @@ public class StockService {
 	    dto.setSymbol(latest.getSymbol());
 	    dto.setCurrentPrice(latest.getClosePrice());
 	    dto.setBias(latest.getBias());
+	    dto.setDate(latest.getDate());	    
 	    return dto;
 	}
 	

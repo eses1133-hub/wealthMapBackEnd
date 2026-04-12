@@ -82,9 +82,18 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 1. 問路的人：通通放行
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/api/news/**").permitAll()
                 // 2. 票務大廳 (Login/Register)：每個人都能進去，不然沒辦法買票
                 .requestMatchers("/api/sse/**").permitAll()
                 .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                .requestMatchers("/api/users/details/**").permitAll()
+                .requestMatchers("/api/notifications/**").permitAll()
+                .requestMatchers("/api/auth/**").permitAll() // 開放這個 API
+                .requestMatchers("/profile").authenticated()
+                .requestMatchers("/by-email").permitAll()
+                .requestMatchers("/api/strategy-api/**").permitAll()
+                .requestMatchers("/api/strategy-set/**").permitAll()
+                .requestMatchers("/send-mail").permitAll()
                 // 3. 園區服務台 (Error)：放行
                 .requestMatchers("/error").permitAll()
                 // 4. 管理員辦公室：只有「園區經理」(ADMIN) 才能進
@@ -92,14 +101,6 @@ public class SecurityConfig {
                 // 5. 熱門設施：只要有手環 (USER/ADMIN) 都能玩
                 .requestMatchers("/api/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                 // 6. 剩下的神祕區域，通通要檢查身分
-                .requestMatchers("/api/notifications/**").permitAll()
-                .requestMatchers("/api/news/**").permitAll()
-                .requestMatchers("/api/auth/**").permitAll() // 開放這個 API
-                .requestMatchers("/profile").authenticated()
-                .requestMatchers("/by-email").permitAll()
-                .requestMatchers("/api/strategy-api/**").permitAll()
-                .requestMatchers("/api/strategy-set/**").permitAll()
-                .requestMatchers("/send-mail").permitAll()
                 .anyRequest().authenticated()
             );
         
