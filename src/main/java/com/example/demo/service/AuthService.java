@@ -1,13 +1,21 @@
 package com.example.demo.service;
 
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.example.demo.dto.ChangePasswordDTO;
 import com.example.demo.dto.LoginDTO;
 import com.example.demo.dto.RegisterDTO;
 import com.example.demo.entity.User;
@@ -33,6 +41,12 @@ public class AuthService {
     // 專門幫遊客密碼「上鎖」的工具
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private JavaMailSender mailSender; // 💡 直接注入郵件發送器
+    
+    @Value("${spring.mail.username}")
+    private String fromEmail;
 
     // 魔法手環 (MagicBand) 的製作與燒錄機
     @Autowired
@@ -99,9 +113,71 @@ public class AuthService {
             setPassword(registerDTO.getPassword());
         }});
     }
+    
+    /**
+     * 【忘記密碼：寄送臨時密碼】
+     * 邏輯與註冊一致：產生亂碼 -> 加密存入 -> 異步寄信
+     */
+    @Async // 確保非同步執行，前端才不會等 //寄信用
+    @Transactional
+    public void processForgotPassword(String email) {
+        // 1. 檢查這個 Email 是不是我們 WealthMap 的遊客
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("找不到該電子信箱，請確認輸入是否正確。"));
 
-	public String getRole(LoginDTO loginDTO) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        // 2. 產生 8 位隨機臨時密碼（就像隨機生成的遊園編號）
+        String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+        System.out.println("臨時密碼" + tempPassword);
+        // 3. 重點：臨時密碼也要加密！這跟 register 裡的寫法完全一樣
+        // 這樣使用者拿這串亂碼登入時，passwordEncoder.matches 才能比對成功
+        user.setPassword(passwordEncoder.encode(tempPassword));
+        
+        // 存入檔案櫃
+        userRepository.save(user);
+
+        // 4. 準備寄送 Email 通知使用者
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(email);
+            message.setSubject("【WealthMap】您的臨時登入密碼");
+            message.setText(buildEmailContent(tempPassword));
+            
+            mailSender.send(message);
+            System.out.println("✅ 臨時密碼已成功寄送至: " + email);
+        } catch (Exception e) {
+            // 因為是 @Async，如果這裡失敗了，我們會記錄在後端 Console
+            System.err.println("❌ 郵件發送失敗: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 構建 Email 內容（保持專業且友善的語氣）
+     */
+    private String buildEmailContent(String tempPassword) {
+        return "親愛的使用者您好：\n\n"
+                + "系統收到您在 WealthMap 的密碼重設請求。為了保護您的資產安全，我們已為您產生了一個隨機的臨時密碼：\n\n"
+                + "臨時密碼：[" + tempPassword + "]\n"
+                + "(請注意區分大小寫，建議直接複製使用)\n\n"
+                + "💡 提醒：登入成功後，請立即前往「個人檔案」修改為您的專屬密碼。\n\n"
+                + "如果您並未要求重設密碼，請忽略此郵件。\n\n"
+                + "WealthMap 開發團隊 敬上";
+    }
+    
+    //修改密碼
+    @Transactional
+    public void updateUserPassword(String email, ChangePasswordDTO dto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("使用者不存在"));
+
+        // 🛡️ 雙重保險：驗證舊密碼
+        // 就算 Token 被盜，小偷不知道你的「臨時密碼」或「舊密碼」，他也改不了
+        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
+            throw new RuntimeException("舊密碼（臨時密碼）輸入不正確！");
+        }
+
+        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        userRepository.save(user);
+    }
+
 }

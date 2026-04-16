@@ -50,7 +50,7 @@ public class StrategySettingController {
 	private StockService stockService;
 	
     
-    // 1. 取得該使用者的所有策略 
+    // 1. 取得該使用者的所有加減碼策略 
     @GetMapping("/user/{userId}")
     public AppResponse<List<StrategyResponseDTO>> getByUserId(@PathVariable("userId") Long userId) {
         List<StrategySetting> settings = strategyRepository.findByUserId(userId);
@@ -70,7 +70,7 @@ public class StrategySettingController {
         return AppResponse.success(dtoList);
     }
     
-    // 2. 新增策略 (對應你的 addStrategy() 彈窗提交)
+    // 2. 新增加減碼策略 (對應你的 addStrategy() 彈窗提交)
     @PostMapping("/user/{userId}")
     public AppResponse<?> create(@PathVariable("userId") Long userId, @RequestBody @Valid StrategyRequestDTO request) {
         User user = userRepository.findById(userId)
@@ -95,7 +95,7 @@ public class StrategySettingController {
         return AppResponse.success(StrategyRequestDTO.fromEntity(saved));
     }
     
-	 // 3. 更改策略 (對應 saveEdit())
+	 // 3. 更改加減碼策略 (對應 saveEdit())
 	 // 建議使用 @PutMapping 並對應資源 ID
 	 @PutMapping("/{id}") 
 	 public AppResponse<StrategyRequestDTO> updateStrategySetting(@PathVariable("id") Long id, @RequestBody @Valid StrategyRequestDTO request) {
@@ -117,7 +117,7 @@ public class StrategySettingController {
 	    return AppResponse.success(StrategyRequestDTO.fromEntity(saved));
 	}
     
-    // 4. 刪除策略
+    // 4. 刪除加減碼策略
 	 @DeleteMapping("/{id}")
 	 public AppResponse<Void> delete(@PathVariable("id") Long id) {
 	     // 1. 先檢查該 ID 是否存在 (避免刪除不存在的資料報錯)

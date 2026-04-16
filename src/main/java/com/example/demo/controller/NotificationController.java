@@ -24,7 +24,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.example.demo.dto.NotificationListDTO;
 import com.example.demo.entity.AlertLog;
 import com.example.demo.entity.Notification;
+
+import com.example.demo.service.EmailService;
 import com.example.demo.repository.AlertLogRepository;
+
 import com.example.demo.service.NotificationService;
 import com.example.demo.vo.AppResponse;
 import com.example.demo.vo.RspCode;
@@ -172,7 +175,7 @@ public class NotificationController {
     
     /**
      * Alert Log個人通知的表
-     * 使用者是否點開個人通知，以標示已讀
+     * 1. 使用者是否點開個人通知，以標示已讀
      */
  	@PatchMapping("/{id}/read")
  	public AppResponse<String> markAsRead(@PathVariable("id") Long id) {
@@ -188,7 +191,7 @@ public class NotificationController {
  	
  	/**
      * 查看個人通知(Alert Log)的表
-     * 使用者是否點開個人通知，以標示已讀
+     * 2. 取得使用者的個人通知
      */
  	@GetMapping("/{userId}/personal-list")
  	public AppResponse<List<AlertLog>> getPersonalAlerts( @PathVariable("userId") Long userId) {
