@@ -22,7 +22,7 @@ public class Liability {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore // 🌟 吸取剛剛的教訓，一開始就把防護罩加上，杜絕無限迴圈！
+    @JsonIgnore //一開始就把防護罩加上，杜絕無限迴圈！
     private User user;
 
     // --- 自動產生 Getters 和 Setters ---

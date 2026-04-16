@@ -26,7 +26,7 @@ public class Asset {
 	@Column(nullable = false, length = 50)
 	private String type;
 	
-	//證券代碼，最長100字
+	//證券代碼，股票的代碼、基金的代碼等，最長100字
 	@Column(name = "symbol", length = 100)
 	private String symbol;
 
