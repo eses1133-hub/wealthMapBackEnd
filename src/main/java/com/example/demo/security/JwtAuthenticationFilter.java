@@ -67,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 //		// 但如果接下來的區域需要手環，那邊的安全地圖 (SecurityConfig) 會把你攔截下來。
 //		filterChain.doFilter(request, response);
 //	}
-
+	
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 	        throws ServletException, IOException {
@@ -87,13 +87,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	    System.out.println("=====================");
 		
 		
-		
+	 // 2. 🔥 【關鍵修改位置】 
+	    
 	    // ⭐⭐⭐ 這段加在這裡（最上面）
 	    String path = request.getServletPath();
-	    if (path.startsWith("/api/auth")) {
+	    if (!path.equals("/api/auth/change-password") && path.startsWith("/api/auth")) {
 	        filterChain.doFilter(request, response);
 	        return;
 	    }
+	    
 	    // ⭐ 不需要 JWT 驗證的 API
 //	    if (path.equals("/register") || path.equals("/login")) {
 //	        filterChain.doFilter(request, response);
@@ -118,6 +120,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
+	         // ✅ 只要跑完這行，Spring Security 就會認識你是誰，不會再給 403
 	            SecurityContextHolder.getContext().setAuthentication(authentication);
 	        }
 
@@ -125,6 +128,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	        logger.error("JWT 驗證失敗", ex);
 	    }
 
+	 // 最後一定要執行這行，讓請求繼續往下走
 	    filterChain.doFilter(request, response);
 	}
 	

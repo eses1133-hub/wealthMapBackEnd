@@ -2,6 +2,7 @@ package com.example.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
@@ -17,6 +18,15 @@ public class WealthmapApplication {
 	public class DemoApplication {
 	    public static void main(String[] args) {
 	        SpringApplication.run(DemoApplication.class, args);
+	    }
+	}
+	
+	//發送email同步使用
+	@SpringBootApplication
+	@EnableAsync // 💡 開啟異步執行功能
+	public class WealthMapApplication {
+	    public static void main(String[] args) {
+	        SpringApplication.run(WealthMapApplication.class, args);
 	    }
 	}
 
