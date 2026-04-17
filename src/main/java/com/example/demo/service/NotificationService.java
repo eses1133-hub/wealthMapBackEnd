@@ -204,7 +204,7 @@ public class NotificationService {
     	// 這裡先固定為 WEB_PUSH
         AlertLog.NotificationChannel channel = AlertLog.NotificationChannel.WEB_PUSH;
         // 調用 Repository 查詢
-        return alertLogRepository.findByUser_IdAndChannel(userId, channel);
+        return alertLogRepository.findByUser_IdAndChannelOrderByAlertTimeDesc(userId, channel);
     }
     
     
