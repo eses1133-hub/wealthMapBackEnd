@@ -1,6 +1,5 @@
 package com.example.demo.controller;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,8 +15,16 @@ import com.example.demo.repository.UserRepository;
 import com.example.demo.vo.AppResponse;
 import com.example.demo.vo.RspCode;
 
+
+import java.util.List;
+
+import org.springframework.web.bind.annotation.*;
+
+
+
 @RestController
 @RequestMapping("/api/users")
+@CrossOrigin
 public class UserController {
 
     @Autowired
@@ -34,7 +41,18 @@ public class UserController {
                 .map(AppResponse::success)
                 .orElse(AppResponse.error(RspCode.NOT_FOUND, "User not found"));
     }
+    
+ // 取得所有使用者
+    @GetMapping
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
 
+    // 新增使用者
+    @PostMapping
+    public User createUser(@RequestBody User user) {
+        return userRepository.save(user);
+    }
     @GetMapping("/by-email")
     public AppResponse<UserProfileDTO> getUserByEmail(@RequestParam("email") String email) {
 

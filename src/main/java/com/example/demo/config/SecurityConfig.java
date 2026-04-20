@@ -1,5 +1,7 @@
 package com.example.demo.config;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +20,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.example.demo.security.CustomUserDetailsService;
 import com.example.demo.security.JwtAuthenticationFilter;
 import com.example.demo.security.JwtTokenProvider;
+
+import io.jsonwebtoken.lang.Arrays;
 
 /**
  * 【迪士尼園區安全地圖】
@@ -111,6 +115,7 @@ public class SecurityConfig {
                 .requestMatchers("/by-email").permitAll()
                 .requestMatchers("/api/strategy-api/**").permitAll()
                 .requestMatchers("/api/strategy-set/**").permitAll()
+                .requestMatchers("/api/auth/**","/api/monte/**").permitAll()
                 .requestMatchers("/send-email").permitAll()
 
                 .anyRequest().authenticated()
@@ -119,6 +124,20 @@ public class SecurityConfig {
        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
        
         return http.build();
+    }
+    //CORS 跨域資源共享
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource_1() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        
+        configuration.setAllowedOrigins(List.of("http://localhost:4200")); 
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
     
     // 獲取後台的認證經理
