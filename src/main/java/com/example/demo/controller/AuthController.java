@@ -56,6 +56,7 @@ public class AuthController {
 		try {
 			// 呼叫後台主管製作一個專屬手環 (Token)
 			String token = authService.login(loginDTO);
+//			String role = authService.getRole(loginDTO);
 			return AppResponse.success(new LoginResponseDTO(token));
 		} catch (Exception e) {
 			// 身分核對失敗，不能隨便放人入園喔
