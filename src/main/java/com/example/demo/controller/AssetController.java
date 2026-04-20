@@ -1,25 +1,51 @@
 package com.example.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import com.example.demo.entity.AssetRecord;
+import com.example.demo.entity.Asset;
+import com.example.demo.entity.User;
 import com.example.demo.service.AssetService;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/assets")
+@RequestMapping("/api/assets") 
+@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true") // 💡 跨域防護罩開啟
 public class AssetController {
-	
-	//自動注入 AssetService 服務層
-	@Autowired
-	private AssetService assetService;
-	
-	//接收前端的 JSON → 轉成 AssetRecord → 存進資料庫 → 把結果回傳給前端
-	@PostMapping	
-    public AssetRecord create(@RequestBody AssetRecord record){
-        return assetService.save(record);
-	}
+
+    @Autowired
+    private AssetService assetService;
+
+    // ---------------------------------------------------------
+    // 1. 新增一筆資產 (前端 POST)
+    // ---------------------------------------------------------
+    @PostMapping("/{userId}")
+    public ResponseEntity<Asset> createAsset(@PathVariable("userId") Long userId, @RequestBody Asset asset) {
+        User user = new User();
+        user.setId(userId);
+        asset.setUser(user);
+
+        Asset savedAsset = assetService.createAsset(asset);
+        return ResponseEntity.ok(savedAsset);
+    }
+
+    // ---------------------------------------------------------
+    // 2. 獲取某個使用者的所有資產 (前端 GET 畫圓餅圖)
+    // ---------------------------------------------------------
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Asset>> getAssetsByUserId(@PathVariable("userId") Long userId) {
+        List<Asset> assets = assetService.getAssetsByUserId(userId);
+        return ResponseEntity.ok(assets);
+    }
+    
+    // ---------------------------------------------------------
+    // 3. 刪除資產 (前端 DELETE)
+    // ---------------------------------------------------------
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteAsset(@PathVariable("id") Long id) {
+        assetService.deleteAsset(id);
+        return ResponseEntity.ok().build(); 
+    }
 }
