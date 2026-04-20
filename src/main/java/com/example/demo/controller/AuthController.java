@@ -1,18 +1,25 @@
 package com.example.demo.controller;
 
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import com.example.demo.dto.ChangePasswordDTO;
 import com.example.demo.dto.LoginDTO;
 import com.example.demo.dto.LoginResponseDTO;
 import com.example.demo.dto.RegisterDTO;
 import com.example.demo.service.AuthService;
+import com.example.demo.service.EmailService;
 import com.example.demo.vo.AppResponse;
 import com.example.demo.vo.RspCode;
 
@@ -74,5 +81,30 @@ public class AuthController {
 			// 樂園系統維護中或其他意外
 			return AppResponse.error(RspCode.INTERNAL_SERVER_ERROR, "Registration failed");
 		}
+	}
+	
+	//忘記密碼寄信
+	@GetMapping("/send-mail")
+	public AppResponse<String> sendForgotPasswordMail(@RequestParam("to") String to) {
+	    try {
+	        // 呼叫整合後的方法，裡面已經包含產生亂碼、存資料庫、寄信
+	        authService.processForgotPassword(to);
+	        
+	        return AppResponse.success("發送成功！請檢查信箱");
+	    } catch (Exception e) {
+	        return AppResponse.error(RspCode.NOT_FOUND, e.getMessage());
+	    }
+	}
+	
+	//修改密碼
+	@PostMapping("/change-password")
+	public AppResponse<String> changePassword(@RequestBody ChangePasswordDTO dto, Authentication auth) {
+	    // 💡 關鍵點：從 SecurityContext (Token) 拿 Email，而不是從前端傳來的 DTO 拿
+	    String currentLoginEmail = auth.getName(); 
+	    
+	    // 這樣不論前端傳什麼，後端永遠只會修改「目前登入者」的資料
+	    authService.updateUserPassword(currentLoginEmail, dto);
+	    
+	    return AppResponse.success("修改成功");
 	}
 }

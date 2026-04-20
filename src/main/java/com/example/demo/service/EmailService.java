@@ -21,6 +21,7 @@ public class EmailService {
     * @param subject 主旨
     * @param body 內容
     */
+
    public void sendSimpleEmail(String to, String subject, String body) {
        SimpleMailMessage message = new SimpleMailMessage();
       

@@ -6,6 +6,10 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -52,11 +56,11 @@ public class NewsController {
         }
     }
     
- // 💡 後台：看全部 (含下架)
-    @GetMapping("/admin/list")
-    public List<News> getAllNewsForAdmin() {
-        return newsService.getAllNewsForAdmin();
-    }
+//  💡 後台：看全部 (含下架)
+//    @GetMapping("/admin/list")
+//    public List<News> getAllNewsForAdmin() {
+//        return newsService.getAllNewsForAdmin();
+//    }
 
     // 💡 前台：只看未被下架的
     @GetMapping("/user/list")
@@ -73,4 +77,48 @@ public class NewsController {
         response.put("id", id);
         return ResponseEntity.ok(response);
     }
+    
+//    @GetMapping("/admin/list")
+//    public ResponseEntity<Map<String, Object>> getAdminNews(
+//        @RequestParam(defaultValue = "0") int page,
+//        @RequestParam(defaultValue = "10") int size
+//    ) {
+//        Pageable paging = PageRequest.of(page, size, Sort.by("id").descending());
+//        Page<News> pageNews = newsRepository.findAll(paging);
+//
+//        Map<String, Object> response = new HashMap<>();
+//        response.put("news", pageNews.getContent());       // 當前頁的資料
+//        response.put("currentPage", pageNews.getNumber()); // 當前頁碼
+//        response.put("totalItems", pageNews.getTotalElements()); // 總筆數
+//        response.put("totalPages", pageNews.getTotalPages());   // 總頁數
+//
+//        return new ResponseEntity<>(response, HttpStatus.OK);
+//    }
+    
+    @GetMapping("/admin/list")
+    public ResponseEntity<Map<String, Object>> getAdminNews(
+        // 💡 設定預設值，如果前端沒傳 page，就從第 0 頁開始
+        @RequestParam(value = "page", defaultValue = "0") int page,
+        // 💡 如果你想要「看全部」，前端可以傳一個很大的 size (例如 999)
+        @RequestParam(value = "size", defaultValue = "10") int size
+    ) {
+        // 1. 建立分頁與排序規則
+        Pageable paging = PageRequest.of(page, size, Sort.by("publishedAt").descending());
+        
+        // 2. 從 Repository 抓取分頁資料
+        // 注意：這裡 newsRepository.findAll(paging) 會自動處理「含下架」的邏輯（除非你在實體有寫 SQL 標註）
+        Page<News> pageNews = newsRepository.findAll(paging);
+
+        // 3. 封裝回傳格式
+        Map<String, Object> response = new HashMap<>();
+        response.put("news", pageNews.getContent());             // 當前頁的新聞清單
+        response.put("currentPage", pageNews.getNumber());       // 目前頁碼
+        response.put("totalItems", pageNews.getTotalElements()); // 資料庫總筆數
+        response.put("totalPages", pageNews.getTotalPages());     // 總共有幾頁
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    
+    
+    
 }
