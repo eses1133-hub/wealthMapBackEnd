@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+
 import com.example.demo.constant.RiskLevel;
 import com.example.demo.dto.RiskAssessmentRequest;
 import com.example.demo.dto.StrategyResponse;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // 引入交易管控
 
 import java.util.Map;
+
 
 @Service
 public class RiskAssessmentService {
@@ -61,5 +63,6 @@ public class RiskAssessmentService {
         if (score <= 20) return RiskLevel.BALANCED;
         if (score <= 25) return RiskLevel.GROWTH;
         return RiskLevel.AGGRESSIVE;
+
     }
 }

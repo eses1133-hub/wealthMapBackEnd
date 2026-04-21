@@ -8,6 +8,12 @@ import org.hibernate.annotations.BatchSize;
 
 import com.example.demo.constant.RiskLevel; // 引入我們寫好的 Enum
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,9 +58,12 @@ public class User {
     @Column(name = "risk_level")
     private RiskLevel riskLevel;
     
+    // 🌟 新增：記錄使用者的風險屬性
+    @Column(name = "risk_level")
+    private String riskLevel; 
+    
     //一個user可擁有很多資產，cascade = CascadeType.ALL=級聯操作
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-
     @BatchSize(size = 10)
     private List<Asset> assets = new ArrayList<>();
     
@@ -73,9 +82,6 @@ public class User {
     private List<FinancialGoal> financialGoals = new ArrayList<>();
     
 	// 一對多(一張問卷有多個題目)
-	// mappedBy = "user" : 指定在Question實體中對應的屬性名稱
-	// cascade = CascadeType.ALL : 問卷的增刪改操作會自動傳遞到相關的題目
-	// orphanRemoval = true : 當題目從問卷中移除時，自動刪除該題目
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
 	@BatchSize(size = 10)
 	private List<StrategySetting> strategySettings = new ArrayList<>();
@@ -90,9 +96,28 @@ public class User {
     public User() {
     }
     		
-    // 你原本手寫的 getter/setter (有 lombok 其實可以拿掉，但保留也不會錯)
-    public Long getId() { return id; }
-    public void setId(Long id){ this.id = id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public Long getId() {
+    	return id;
+    }
+    
+    public void setId(Long id){
+    	this.id = id;
+    }
+    
+    public String getName() {
+    	return name;
+    }
+    
+    public void setName(String name) {
+    	this.name = name;
+    }
+
+    // 🌟 新增的 Getter 與 Setter
+    public String getRiskLevel() {
+        return riskLevel;
+    }
+
+    public void setRiskLevel(String riskLevel) {
+        this.riskLevel = riskLevel;
+    }
 }
