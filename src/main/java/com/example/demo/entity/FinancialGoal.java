@@ -2,6 +2,7 @@ package com.example.demo.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "financial_goals")
@@ -24,6 +25,7 @@ public class FinancialGoal {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore // 防止循環引用，讓 JSON 序列化時忽略這個屬性
     private User user;
 
     public FinancialGoal() {
