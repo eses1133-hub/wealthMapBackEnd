@@ -1,13 +1,19 @@
 package com.example.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.StrategyResponseDTO;
 import com.example.demo.dto.UserProfileDTO;
 import com.example.demo.entity.Asset;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.vo.AppResponse;
+import com.example.demo.vo.RspCode;
 
 
 import java.util.List;
@@ -20,15 +26,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/users")
 @CrossOrigin
 public class UserController {
-	
-	 @Autowired
-	    private UserRepository userRepository;
 
-	    // 取得所有使用者
-	    @GetMapping
-	    public List<User> getAllUsers() {
-	        return userRepository.findAll();
-	    }
+    @Autowired
+    private UserRepository userRepository;	
 
     @GetMapping("/profile")
     public AppResponse<User> getUserProfile(Authentication authentication) {

@@ -51,16 +51,18 @@ public class User {
     @Column(nullable = false)
 	private String role; // 使用者角色 (例如: "USER", "ADMIN")
 
-    // ==========================================
+   
     // 架構師新增：使用者的風險屬性 (存入資料庫為字串，如 "GROWTH")
-    // ==========================================
-    @Enumerated(EnumType.STRING)
+    
+    //@Enumerated(EnumType.STRING)
+    //@Column(name = "risk_level")
+    //private RiskLevel riskLevel;
     @Column(name = "risk_level")
-    private RiskLevel riskLevel;
+    private String riskLevel;
     
     // 🌟 新增：記錄使用者的風險屬性
-    @Column(name = "risk_level")
-    private String riskLevel; 
+//    @Column(name = "risk_level")
+//    private String riskLevel; 
     
     //一個user可擁有很多資產，cascade = CascadeType.ALL=級聯操作
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -112,12 +114,5 @@ public class User {
     	this.name = name;
     }
 
-    // 🌟 新增的 Getter 與 Setter
-    public String getRiskLevel() {
-        return riskLevel;
-    }
 
-    public void setRiskLevel(String riskLevel) {
-        this.riskLevel = riskLevel;
-    }
 }

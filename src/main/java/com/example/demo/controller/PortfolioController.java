@@ -32,16 +32,19 @@ public class PortfolioController {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("找不到使用者"));
             
-            RiskLevel level = user.getRiskLevel();
+            String level = user.getRiskLevel();
             if (level == null ) {
                 return ResponseEntity.badRequest().body("該使用者尚未進行風險評估");
             }
-
-            // 2. 準備推薦清單
+            
+            if (level == null || level.isEmpty()) {
+                return ResponseEntity.badRequest().body("該使用者尚未進行風險評估");
+            }
+            
             List<Map<String, String>> recommendations = new ArrayList<>();
 
             // 3. 根據屬性給予不同的推薦標的 (你可以自由修改這些標的)
-            switch (level.name()) {
+            switch (level) {
                 case "CONSERVATIVE": // 保守型
                     recommendations.add(Map.of("name", "美國短期公債 ETF", "symbol", "SHV", "type", "債券", "description", "極低風險，適合資金停泊"));
                     recommendations.add(Map.of("name", "綜合債券 ETF", "symbol", "BND", "type", "債券", "description", "穩定配息，波動小"));
