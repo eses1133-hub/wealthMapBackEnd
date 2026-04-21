@@ -4,9 +4,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,13 +15,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+<<<<<<< Updated upstream
 import jakarta.persistence.Enumerated; // 新增 Enum 註解
 import jakarta.persistence.EnumType;   // 新增 Enum 型別定義
 import com.example.demo.constant.RiskLevel; // 引入我們寫好的 Enum
+=======
+import lombok.Getter;
+import lombok.Setter;
+>>>>>>> Stashed changes
 
 @Entity
 @Table(name = "users")
-@Data
 @Getter
 @Setter
 public class User {
@@ -55,6 +58,10 @@ public class User {
     
     //一個user可擁有很多資產，cascade = CascadeType.ALL=級聯操作
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+<<<<<<< Updated upstream
+=======
+    @BatchSize(size = 10)
+>>>>>>> Stashed changes
     private List<Asset> assets = new ArrayList<>();
     
     //一個user可擁有很多交易紀錄
@@ -63,11 +70,21 @@ public class User {
     
     //一個user可擁有很多投資
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 10)
     private List<Investment> investments = new ArrayList<>();
     
     //一個user可擁有很多財務目標
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 10)
     private List<FinancialGoal> financialGoals = new ArrayList<>();
+    
+	// 一對多(一張問卷有多個題目)
+	// mappedBy = "user" : 指定在Question實體中對應的屬性名稱
+	// cascade = CascadeType.ALL : 問卷的增刪改操作會自動傳遞到相關的題目
+	// orphanRemoval = true : 當題目從問卷中移除時，自動刪除該題目
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	@BatchSize(size = 10)
+	private List<StrategySetting> strategySettings = new ArrayList<>();
     
     //資料存進DB前，自動設定時間
     @PrePersist
