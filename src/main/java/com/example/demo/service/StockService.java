@@ -45,8 +45,12 @@ public class StockService {
 	private static final Logger log = LoggerFactory.getLogger(StockService.class);
 
 	private final RestTemplate restTemplate = new RestTemplate();
+	
+	// 1. 使用 @Value 注入 properties 中的值
+    @Value("${finmind.api.token}")
+    private String apiToken;
 	// 建議：將 Token 放在配置文件中，這裡示範直接定義
-	private final String API_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wMy0xOSAxNzoyNToxNyIsInVzZXJfaWQiOiJlc2VzMTExMyIsImVtYWlsIjoiamluZ3lpODYxMjExQGdtYWlsLmNvbSIsImlwIjoiMjAzLjY5LjkxLjE3MiJ9.0JW_6Chy6XJB28WAgiLZoDmUsY9ChjS9hA5dy0QYgvw";
+//	private final String API_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wMy0xOSAxNzoyNToxNyIsInVzZXJfaWQiOiJlc2VzMTExMyIsImVtYWlsIjoiamluZ3lpODYxMjExQGdtYWlsLmNvbSIsImlwIjoiMjAzLjY5LjkxLjE3MiJ9.0JW_6Chy6XJB28WAgiLZoDmUsY9ChjS9hA5dy0QYgvw";
 
 	@Autowired
     private AssetRepository assetRepository;
@@ -134,7 +138,7 @@ public class StockService {
 		
 		// --- B. 設定請求標頭 (Headers) ---
 		HttpHeaders headers = new HttpHeaders();
-		headers.set("Authorization", "Bearer " + API_TOKEN);
+		headers.set("Authorization", "Bearer " + apiToken);
 		HttpEntity<String> entity = new HttpEntity<>(headers);
 		// --- C. 動態建構 URL ---
 		String url = UriComponentsBuilder.fromUriString("https://api.finmindtrade.com/api/v4/data")
