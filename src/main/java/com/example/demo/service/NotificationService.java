@@ -106,16 +106,16 @@ public class NotificationService {
     }
     
     
-    public void saveNotification(Long userId, String message) {
+    public void saveAlertLog(Long id, String message) {
 
-        Notification entity = new Notification();
+        AlertLog entity = new AlertLog();
 
-        entity.setUserId(userId); // ⚠️ 前提：你的 Entity 要有這欄位
+        entity.setId(id); // ⚠️ 前提：你的 Entity 要有這欄位
         entity.setTitle("繳款提醒");
         entity.setContent(message);
-        entity.setScheduledDate(LocalDate.now());
+        entity.setAlertTime(LocalDateTime.now());
 
-        notificationRepository.save(entity);
+        alertLogRepository.save(entity);
     }
 
     // 3. 刪除
