@@ -77,9 +77,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         
-    	JwtAuthenticationFilter jwtAuthenticationFilter =
+        JwtAuthenticationFilter jwtAuthenticationFilter =
            new JwtAuthenticationFilter(tokenProvider, customUserDetailsService);
       
+
     	
     	http
 
@@ -117,6 +118,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/strategy-set/**").permitAll()
                 .requestMatchers("/api/auth/**","/api/monte/**").permitAll()
                 .requestMatchers("/send-email").permitAll()
+
 
                 .anyRequest().authenticated()
             );

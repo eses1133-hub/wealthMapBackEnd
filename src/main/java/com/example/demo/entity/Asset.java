@@ -4,8 +4,11 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "assets")
@@ -25,7 +28,7 @@ public class Asset {
 	@Column(nullable = false, length = 50)
 	private String type;
 	
-	//證券代碼，最長100字
+	//證券代碼，股票的代碼、基金的代碼等，最長100字
 	@Column(name = "symbol", length = 100)
 	private String symbol;
 
@@ -41,6 +44,7 @@ public class Asset {
 	//很多筆Asset屬於一個User
 	@ManyToOne
 	@JoinColumn(name = "user_id")
+	@JsonIgnore
 	private User user;
 
 	//第一次存進資料庫之前，自動設定 createdAt

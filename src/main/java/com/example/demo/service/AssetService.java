@@ -1,50 +1,34 @@
 package com.example.demo.service;
 
+import com.example.demo.entity.Asset;
+import com.example.demo.repository.AssetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.example.demo.dto.FinancialHealthDTO;
-import com.example.demo.entity.AssetRecord;
-import com.example.demo.repository.AssetRecordRepository;
+import java.time.LocalDateTime;
+import com.example.demo.entity.Asset;
+import com.example.demo.repository.AssetRepository;
+
+import java.util.List;
 
 @Service
 public class AssetService {
-	@Autowired
-	private AssetRecordRepository repository;
-	
 
-	
-	public AssetRecord save(AssetRecord record) {
-		return repository.save(record);
-	}
-	
-	public double calculateNetWorth(AssetRecord record) {
-		
-		double totalAsset = record.getCash()
-		+record.getInvestment()
-		+record.getInsurance()
-		+record.getFund()
-		+record.getProperty();
-		
-		double totalDebt = record.getDebt();	
-		
-		return totalAsset;
-	}
-	
-	public FinancialHealthDTO analyze(AssetRecord record) {
-		
-		double netWorth = calculateNetWorth(record);
-		FinancialHealthDTO dto = new FinancialHealthDTO();
-		dto.setNetWorth(netWorth);
-		
-		if(netWorth>1000000) {
-			dto.setLevel("健康");
-		}else if(netWorth > 0 ) {
-			dto.setLevel("普通");
-		}else {
-			dto.setLevel("危險");
-		}
-		
-		return dto;
-	}
+    @Autowired
+    private AssetRepository assetRepository;
+
+    // 1. 新增資產
+    public Asset createAsset(Asset asset) {
+        return assetRepository.save(asset);
+    }
+
+    // 2. 查詢該使用者的所有資產
+    public List<Asset> getAssetsByUserId(Long userId) {
+        return assetRepository.findByUserId(userId);
+    }
+
+    // 3. 刪除資產
+    public void deleteAsset(Long id) {
+        assetRepository.deleteById(id);
+    }
 }

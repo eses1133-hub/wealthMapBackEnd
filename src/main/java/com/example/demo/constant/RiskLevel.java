@@ -1,7 +1,7 @@
 package com.example.demo.constant;
 
 public enum RiskLevel {
-    // 分數區間對應的等級與預設資產配置比例 (股票%, 債券%, 另類%)
+    
     CONSERVATIVE("保守型", 15, 75, 10), // 1 - 10 分
     DEFENSIVE("穩健型", 35, 55, 10),    // 11 - 15 分
     BALANCED("平衡型", 50, 35, 15),     // 16 - 20 分

@@ -1,6 +1,6 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '4.0.3'
+	id 'org.springframework.boot' version '3.2.4' // 💡 修正為穩定的 3.2.4 版
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -25,21 +25,28 @@ repositories {
 }
 
 dependencies {
+	// --- 🚀 核心功能 ---
+	implementation 'org.springframework.boot:spring-boot-starter-web' // 💡 修正名稱
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	// --- 🔐 JWT 憑證相關 ---
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
-   runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
-   runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
-   implementation 'org.springframework.boot:spring-boot-starter-mail'
-   implementation 'org.springframework.boot:spring-boot-starter-validation'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+	// --- 🛠️ 資料庫與輔助工具 ---
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	// --- 🧪 測試工具 ---
+	testImplementation 'org.springframework.boot:spring-boot-starter-test' // 💡 統一測試套件
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 

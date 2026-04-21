@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.BatchSize;
+
+import com.example.demo.constant.RiskLevel; // 引入我們寫好的 Enum
+
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
@@ -14,18 +17,19 @@ import lombok.Setter;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;   // 新增 Enum 型別定義
+import jakarta.persistence.Enumerated; // 新增 Enum 註解
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import lombok.Data;
 
 @Entity
 @Table(name = "users")
 @Data
-@Getter
-@Setter
 public class User {
 	
     @Id	
@@ -35,7 +39,7 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name; //使用者名稱
 
-    @Column(nullable = false,unique = true)
+    @Column(nullable = false, unique = true, length = 100)
     private String email; //使用者EMAIL
 
     @Column(nullable = false, length = 255)
@@ -46,6 +50,19 @@ public class User {
     
     @Column(nullable = false)
 	private String role; // 使用者角色 (例如: "USER", "ADMIN")
+
+   
+    // 架構師新增：使用者的風險屬性 (存入資料庫為字串，如 "GROWTH")
+    
+    //@Enumerated(EnumType.STRING)
+    //@Column(name = "risk_level")
+    //private RiskLevel riskLevel;
+    @Column(name = "risk_level")
+    private String riskLevel;
+    
+    // 🌟 新增：記錄使用者的風險屬性
+//    @Column(name = "risk_level")
+//    private String riskLevel; 
     
     //一個user可擁有很多資產，cascade = CascadeType.ALL=級聯操作
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -61,15 +78,12 @@ public class User {
     @BatchSize(size = 10)
     private List<Investment> investments = new ArrayList<>();
     
-  //一個user可擁有很多財務目標
+    //一個user可擁有很多財務目標
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 10)
     private List<FinancialGoal> financialGoals = new ArrayList<>();
     
 	// 一對多(一張問卷有多個題目)
-	// mappedBy = "user" : 指定在Question實體中對應的屬性名稱
-	// cascade = CascadeType.ALL : 問卷的增刪改操作會自動傳遞到相關的題目
-	// orphanRemoval = true : 當題目從問卷中移除時，自動刪除該題目
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
 	@BatchSize(size = 10)
 	private List<StrategySetting> strategySettings = new ArrayList<>();
@@ -99,5 +113,6 @@ public class User {
     public void setName(String name) {
     	this.name = name;
     }
+
 
 }

@@ -3,10 +3,12 @@ package com.example.demo.service;
 import com.example.demo.constant.RiskLevel;
 import com.example.demo.dto.RiskAssessmentRequest;
 import com.example.demo.dto.StrategyResponse;
+import com.example.demo.entity.RiskAssessment; // 🌟 記得匯入實體
 import com.example.demo.entity.User;
-import com.example.demo.repository.UserRepository; // 引入 Repository
+import com.example.demo.repository.RiskAssessmentRepository; // 🌟 記得匯入 Repository
+import com.example.demo.repository.UserRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // 引入交易管控
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -14,31 +16,68 @@ import java.util.Map;
 public class RiskAssessmentService {
 
     private final UserRepository userRepository;
+    
+    // 🌟 1. 新增負責存「測驗紀錄」的 Repository
+    private final RiskAssessmentRepository riskAssessmentRepository; 
 
-    // 透過建構子注入 UserRepository
-    public RiskAssessmentService(UserRepository userRepository) {
+    // 🌟 2. 把新的 Repository 加進建構子裡面
+    public RiskAssessmentService(UserRepository userRepository, RiskAssessmentRepository riskAssessmentRepository) {
         this.userRepository = userRepository;
+        this.riskAssessmentRepository = riskAssessmentRepository;
     }
 
-    // 加上 @Transactional，確保寫入資料庫失敗時能自動 Rollback
+    @Transactional
+    public RiskAssessment evaluateAndSave(RiskAssessment assessment) {
+        
+        // 1. 計算總分 (把前端傳來的 6 題分數加總)
+        int totalScore = assessment.getAgeScore() + 
+                         assessment.getAllocationScore() + 
+                         assessment.getDurationScore() + 
+                         assessment.getExperienceScore() + 
+                         assessment.getKnowledgeScore() + 
+                         assessment.getToleranceScore();
+
+        // 2. 根據總分判斷風險屬性 (分數區間你可以依照你們的企劃調整)
+        String level = "";
+        if (totalScore <= 12) {
+            level = "CONSERVATIVE"; // 保守型
+        } else if (totalScore <= 22) {
+            level = "DEFENSIVE";    // 穩健型
+        } else if (totalScore <= 32) {
+            level = "BALANCED";     // 平衡型
+        } else if (totalScore <= 42) {
+            level = "GROWTH";       // 積極型
+        } else {
+            level = "AGGRESSIVE";   // 衝刺型
+        }
+
+        // 3. 把算出來的等級塞回問卷結果中
+        assessment.setRiskLevel(level);
+
+        // 4. 呼叫 Repository 幫忙存進資料庫，並回傳存好的整包資料
+        return riskAssessmentRepository.save(assessment);
+    }
+
+    // ==========================================
+    // 下面是你原本就寫好的其他功能，我幫你原封不動保留！
+    // ==========================================
     @Transactional
     public StrategyResponse evaluateRisk(RiskAssessmentRequest request) {
-        // 1. 計算總分 (滿分 30 分)
+        // 1. 計算總分 
         int totalScore = request.calculateTotalScore();
 
-        // 2. 根據分數決定風險等級
+        // 2. 根據總分判定風險屬性
         RiskLevel userLevel = determineLevel(totalScore);
 
-        // 3. 儲存結果到資料庫 (根據 request 傳來的 userId)
+        // 3. 儲存結果到資料庫 
         if (request.userId() != null) {
             User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new RuntimeException("資料庫找不到此使用者 ID: " + request.userId()));
             
-            user.setRiskLevel(userLevel); // 設定風險等級
+            user.setRiskLevel(userLevel.name()); // 設定風險等級
             userRepository.save(user);    // 寫入資料庫
         }
 
-        // 4. 封裝前端第三頁需要的結果 (包含資產配置比例)
         Map<String, Integer> allocation = Map.of(
             "權益型資產 (股票/基金)", userLevel.getEquityPercent(),
             "固定收益 (債券/定存)", userLevel.getBondPercent(),
@@ -53,8 +92,7 @@ public class RiskAssessmentService {
             false
         );
     }
-
-    // 核心計分邏輯：嚴格對應你設定的區間
+    
     private RiskLevel determineLevel(int score) {
         if (score <= 10) return RiskLevel.CONSERVATIVE;
         if (score <= 15) return RiskLevel.DEFENSIVE;
