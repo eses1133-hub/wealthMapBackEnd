@@ -1,5 +1,7 @@
 package com.example.demo.dto;
 
+import java.time.LocalDate;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,4 +21,5 @@ public class StrategyDTO {
     private double bias;        // 乖離率 ( (Price - MA20) / MA20 )
     private String action;      // 建議動作： "加碼", "減碼", "觀望"
     private boolean shouldNotify; // 是否達到發送通知的門檻
+    private LocalDate date;     //最新價格收盤日期
 }

@@ -89,34 +89,35 @@ public class SecurityConfig {
          // 💡 加入這行：設定為「無狀態」模式，完全依賴 Token
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth 
-            		// 1. 問路的人：通通放行
-                    .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                    // 2. 票務大廳 (Login/Register)：每個人都能進去，不然沒辦法買票
-                    .requestMatchers("/api/sse/**").permitAll()
-                    .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                    // 3. 園區服務台 (Error)：放行
-                    .requestMatchers("/error").permitAll()
-                    // 4. 管理員辦公室：只有「園區經理」(ADMIN) 才能進
-                    .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                    
-                    // 因為訪客可以看到系統公告和新聞 所以放在5前面
-                    .requestMatchers("/api/notifications/**").permitAll()
-            		.requestMatchers("/api/news/**").permitAll()
-            		
-                    // 5. 熱門設施：只要有手環 (USER/ADMIN) 都能玩
-                    .requestMatchers("/api/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
-                    // 6. 剩下的神祕區域，通通要檢查身分
-            		
-            		.requestMatchers("/api/auth/send-mail").permitAll()      // 1. 發信不用登入
-            		.requestMatchers("/api/auth/login").permitAll()          // 2. 登入不用登入
-            		.requestMatchers("/api/auth/register").permitAll()       // 3. 註冊不用登入
-            		.requestMatchers("/api/auth/change-password").authenticated() // 4. 修改密碼「必須」登入
-
+                // 1. 問路的人：通通放行
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                // 2. 票務大廳 (Login/Register)：每個人都能進去，不然沒辦法買票
+                .requestMatchers("/api/sse/**").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                .requestMatchers("/api/users/details/**").permitAll()
+                // 3. 園區服務台 (Error)：放行
+                .requestMatchers("/error").permitAll()
+                // 4. 管理員辦公室：只有「園區經理」(ADMIN) 才能進
+                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+                
+                // 因為訪客可以看到系統公告和新聞 所以放在5前面
+                .requestMatchers("/api/notifications/**").permitAll()
+                .requestMatchers("/api/news/**").permitAll()
+                
+                // 5. 熱門設施：只要有手環 (USER/ADMIN) 都能玩
+                .requestMatchers("/api/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                // 6. 剩下的神祕區域，通通要檢查身分
+                
+                .requestMatchers("/api/auth/send-mail").permitAll()      // 1. 發信不用登入
+                .requestMatchers("/api/auth/login").permitAll()          // 2. 登入不用登入
+                .requestMatchers("/api/auth/register").permitAll()       // 3. 註冊不用登入
+                .requestMatchers("/api/auth/change-password").authenticated() // 4. 修改密碼「必須」登入
                 .requestMatchers("/profile").authenticated()
                 .requestMatchers("/by-email").permitAll()
                 .requestMatchers("/api/strategy-api/**").permitAll()
                 .requestMatchers("/api/strategy-set/**").permitAll()
                 .requestMatchers("/api/risk/**").permitAll()
+                .requestMatchers("/api/auth/**","/api/monte/**").permitAll()
                 .requestMatchers("/send-email").permitAll()
 
 

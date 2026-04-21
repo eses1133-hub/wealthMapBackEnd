@@ -72,7 +72,7 @@ public class UserController {
         return userRepository.findByEmailWithAllData(email) // 改用我們寫的優化查詢
                 .map(user -> {
                     UserProfileDTO dto = new UserProfileDTO();
-                    dto.setId(user.getId());
+                    dto.setId(user.getId());                   
                     dto.setName(user.getName());
                     dto.setEmail(user.getEmail());
                     dto.setRole(user.getRole());

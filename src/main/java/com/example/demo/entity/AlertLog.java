@@ -14,6 +14,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -44,6 +45,12 @@ public class AlertLog {
 
 	private LocalDateTime alertTime; // 發送時間
 
+	@PrePersist
+	public void prePersist() {
+		this.alertTime = LocalDateTime.now();
+	}
+
+	
 	@Enumerated(EnumType.STRING)
 	private NotificationChannel channel; // 發送管道：EMAIL, LINE, WEB_PUSH
 
@@ -57,6 +64,8 @@ public class AlertLog {
 
     private int retryCount = 0; // 重試次數
 	
+
+    
 	//分類定義
 	public enum AlertCategory {
 	 STOCK_STRATEGY, // 股票加減碼
