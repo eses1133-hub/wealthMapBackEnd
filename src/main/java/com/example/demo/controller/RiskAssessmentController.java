@@ -16,7 +16,7 @@ public class RiskAssessmentController {
         this.riskService = riskService;
     }
 
-    @PostMapping("/evaluate")
+    @PostMapping("/evaluate1")
     public StrategyResponse evaluate(@RequestBody RiskAssessmentRequest request) {
         // 直接將前端傳來的 6 題分數交給 Service 處理
         return riskService.evaluateRisk(request);

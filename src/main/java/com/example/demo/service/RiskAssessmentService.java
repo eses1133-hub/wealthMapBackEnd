@@ -36,7 +36,7 @@ public class RiskAssessmentService {
             User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new RuntimeException("資料庫找不到此使用者 ID: " + request.userId()));
             
-            user.setRiskLevel(userLevel); // 設定風險等級
+//            user.setRiskLevel(userLevel); // 設定風險等級
             userRepository.save(user);    // 寫入資料庫
         }
 

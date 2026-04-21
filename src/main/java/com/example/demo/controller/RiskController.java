@@ -46,63 +46,63 @@ public class RiskController {
             assessment.setUser(user);
 
             //  存進風險評估歷史紀錄 (你原本的邏輯)
-            RiskAssessment savedResult = riskService.evaluateAndSave(assessment);
-
-            String level = savedResult.getRiskLevel();
-
-           
-            //  同步更新會員資料表！讓大腦記住他的屬性
-            
-            user.setRiskLevel(level);
-            userRepository.save(user);
-
-            
-            //  打包前端需要的 StrategyResponse 大禮包
-           
+//            RiskAssessment savedResult = riskService.evaluateAndSave(assessment);
+//
+//            String level = savedResult.getRiskLevel();
+//
+//           
+//            //  同步更新會員資料表！讓大腦記住他的屬性
+//            
+//            user.setRiskLevel(level);
+//            userRepository.save(user);
+//
+//            
+//            //  打包前端需要的 StrategyResponse 大禮包
+//           
             Map<String, Object> response = new HashMap<>();
-            response.put("userLevel", level);
-            
-            boolean isOverMatch = (assessment.getAgeScore() <= 2 && assessment.getToleranceScore() >= 4);
-            response.put("isRiskOverMatch", isOverMatch);
-
-            String advice = "";
-            Map<String, Integer> allocation = new HashMap<>();
-
-            switch(level) {
-                case "CONSERVATIVE":
-                    advice = "您屬於保守型投資人，無法承受過大資金波動。建議以保本為首要目標，將大部分資金配置於低風險的定存與高評等債券。";
-                    allocation.put("現金與定存", 60);
-                    allocation.put("政府債券", 30);
-                    allocation.put("大型穩健股", 10);
-                    break;
-                case "DEFENSIVE":
-                    advice = "您屬於穩健型投資人，能在承擔微小風險的前提下追求穩定收益。建議以債券為主，搭配少部分股票。";
-                    allocation.put("現金與定存", 30);
-                    allocation.put("投資級債券", 50);
-                    allocation.put("大型股/ETF", 20);
-                    break;
-                case "BALANCED":
-                    advice = "您屬於平衡型投資人，願意承受適度風險以換取合理報酬。股債平衡是您最好的選擇。";
-                    allocation.put("現金與定存", 10);
-                    allocation.put("債券", 40);
-                    allocation.put("股票/ETF", 50);
-                    break;
-                case "GROWTH":
-                    advice = "您屬於積極型投資人，追求資本長線增值，能忍受市場較大的波動。建議拉高股票資產的比重。";
-                    allocation.put("現金", 10);
-                    allocation.put("債券", 20);
-                    allocation.put("股票/ETF", 70);
-                    break;
-                case "AGGRESSIVE":
-                    advice = "您屬於衝刺型投資人，追求最高報酬，對短線劇烈波動不以為意。可考慮高成長股或科技股等資產。";
-                    allocation.put("現金", 5);
-                    allocation.put("高收益債", 10);
-                    allocation.put("股票/高風險資產", 85);
-                    break;
-            }
-
-            response.put("advice", advice);
-            response.put("allocation", allocation);
+//            response.put("userLevel", level);
+//            
+//            boolean isOverMatch = (assessment.getAgeScore() <= 2 && assessment.getToleranceScore() >= 4);
+//            response.put("isRiskOverMatch", isOverMatch);
+//
+//            String advice = "";
+//            Map<String, Integer> allocation = new HashMap<>();
+//
+//            switch(level) {
+//                case "CONSERVATIVE":
+//                    advice = "您屬於保守型投資人，無法承受過大資金波動。建議以保本為首要目標，將大部分資金配置於低風險的定存與高評等債券。";
+//                    allocation.put("現金與定存", 60);
+//                    allocation.put("政府債券", 30);
+//                    allocation.put("大型穩健股", 10);
+//                    break;
+//                case "DEFENSIVE":
+//                    advice = "您屬於穩健型投資人，能在承擔微小風險的前提下追求穩定收益。建議以債券為主，搭配少部分股票。";
+//                    allocation.put("現金與定存", 30);
+//                    allocation.put("投資級債券", 50);
+//                    allocation.put("大型股/ETF", 20);
+//                    break;
+//                case "BALANCED":
+//                    advice = "您屬於平衡型投資人，願意承受適度風險以換取合理報酬。股債平衡是您最好的選擇。";
+//                    allocation.put("現金與定存", 10);
+//                    allocation.put("債券", 40);
+//                    allocation.put("股票/ETF", 50);
+//                    break;
+//                case "GROWTH":
+//                    advice = "您屬於積極型投資人，追求資本長線增值，能忍受市場較大的波動。建議拉高股票資產的比重。";
+//                    allocation.put("現金", 10);
+//                    allocation.put("債券", 20);
+//                    allocation.put("股票/ETF", 70);
+//                    break;
+//                case "AGGRESSIVE":
+//                    advice = "您屬於衝刺型投資人，追求最高報酬，對短線劇烈波動不以為意。可考慮高成長股或科技股等資產。";
+//                    allocation.put("現金", 5);
+//                    allocation.put("高收益債", 10);
+//                    allocation.put("股票/高風險資產", 85);
+//                    break;
+//            }
+//
+//            response.put("advice", advice);
+//            response.put("allocation", allocation);
 
             return ResponseEntity.ok(response);
 
