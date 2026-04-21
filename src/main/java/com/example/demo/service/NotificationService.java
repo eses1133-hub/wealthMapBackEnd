@@ -210,8 +210,10 @@ public class NotificationService {
      * 取得個人提醒列表 (by UserId & Channel)
      */
     public List<AlertLog> getPersonalAlerts(Long userId) {
-    
-        return alertLogRepository.findByUser_IdAndChannel(userId, AlertLog.NotificationChannel.WEB_PUSH);
+    	// 這裡先固定為 WEB_PUSH
+        AlertLog.NotificationChannel channel = AlertLog.NotificationChannel.WEB_PUSH;
+        // 調用 Repository 查詢
+        return alertLogRepository.findByUser_IdAndChannelOrderByAlertTimeDesc(userId, channel);
     }
 
 }
