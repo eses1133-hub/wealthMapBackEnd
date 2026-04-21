@@ -12,7 +12,7 @@ import com.example.demo.entity.Notification;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     // 💡 讓最新的通知排在最前面
-    List<Notification> findAllByOrderByCreatedAtDesc();
+    List<Notification> findAllByOrderByCreateTimeDesc();
     
  // 💡 只抓取排程時間「小於等於」現在時間的公告，並按時間倒序
     List<Notification> findByScheduledDateLessThanEqualOrderByScheduledDateDesc(LocalDateTime now);
