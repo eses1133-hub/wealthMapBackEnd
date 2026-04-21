@@ -183,12 +183,13 @@ public class StockService {
 						stockPriceRepository.saveAll(newStockPrice);
 						log.info(">>> 成功存入 {} 筆新資料！", newStockPrice.size());
 						
-						// 資料存完後，觸發計算乖離率與通知
-					    this.checkAndNotifyStrategy(symbol);
-			            // 若需要跑過去20筆資料，可先將上方function註解
+
 					} else {
 						log.info(">>> 資料已存在，本次無須更新。");
 					}
+					// 資料存完後，觸發計算乖離率與通知
+				    this.checkAndNotifyStrategy(symbol);
+		            // 若需要跑過去20筆資料，可先將上方function註解
 				} else {
 					log.warn("API 請求成功，但該時段內無交易資料（可能為非交易日）。");
 				}
@@ -276,10 +277,14 @@ public class StockService {
 		    
 			// 如果達到門檻且需要觸發
 		    if (action != null) {
+		    	try {
 				// 【執行發送】 by mail
 				executeEmailNotification(setting, currentData, action);
 				// by SSE/WEB_PUSH
 				executeSseNotification(setting, currentData, action);
+		    	}catch(Exception e) {
+		    		log.error(">>> Email 寄送失敗!");
+		    	}
 			}
 		}
 	}
@@ -288,6 +293,7 @@ public class StockService {
      * 功能 C: 執行郵件寄送 (原有的 Log 與 Email 邏輯)
      */
     private void executeEmailNotification(StrategySetting setting, StrategyDTO result, String action) {
+    	log.info(">>> 進入寄信流程：User={}, Stock={}", setting.getUser().getId(), setting.getSymbol());
         // 檢查今天發過沒
 		boolean alreadyNotified = alertLogRepository.existsByUserIdAndTargetIdAndCategoryAndChannelAndAlertTimeAfter(
 	    	    setting.getUser().getId(), 
@@ -296,6 +302,7 @@ public class StockService {
 	    	    AlertLog.NotificationChannel.EMAIL, 
 	    	    LocalDate.now().atStartOfDay()
 	    	);
+		log.info(">>> 是否已通知過: {}", alreadyNotified);
 
         if (!alreadyNotified) {
         	// 【預約提醒】先存入 Log 並標記為 PENDING
@@ -311,8 +318,23 @@ public class StockService {
             pendingLog.setAlertTime(LocalDateTime.now());
 
             AlertLog savedLog = alertLogRepository.save(pendingLog);
-            emailService.sendStrategyEmail(setting.getUser().getEmail(), savedLog);
-            log.info(">>> 已寄送通知給使用者 {}: 股票 {}", setting.getUser().getId(), setting.getSymbol());
+            
+            try {
+            	// 2. 寄信
+                emailService.sendStrategyEmail(setting.getUser().getEmail(), savedLog);
+                
+                // 3. 寄信成功後，將狀態改為 SENT
+                savedLog.setStatus(AlertLog.AlertStatus.SENT);
+                alertLogRepository.save(savedLog);
+                log.info(">>> Email 寄送成功: {}", setting.getSymbol());
+            }catch(Exception e){
+            	// 4. 失敗時記錄原因，狀態改為 FAILED
+                savedLog.setStatus(AlertLog.AlertStatus.FAILED);
+                alertLogRepository.save(savedLog);
+                log.error(">>> Email 寄送失敗! 股票: {}, 原因: {}", setting.getSymbol(), e.getMessage());
+            }
+        }else {
+            log.warn(">>> 今天已寄送過，跳過流程");
         }
     }
     
@@ -436,7 +458,7 @@ public class StockService {
 	/**
 	 * 排程觸發點 設定：每週一至週五，下午 14:00 執行 (台股收盤後且資料更新後) 指定時區：Asia/Taipei 確保在雲端環境也能準時執行
 	 */
-	@Scheduled(cron = "0 00 14 * * MON-FRI", zone = "Asia/Taipei")
+	@Scheduled(cron = "0 30 14 * * MON-FRI", zone = "Asia/Taipei")
 	public void scheduledTask() {
 		log.info("=== 定時排程啟動 ===");
 		executeFetch();
