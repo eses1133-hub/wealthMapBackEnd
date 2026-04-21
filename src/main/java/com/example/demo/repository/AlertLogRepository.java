@@ -58,4 +58,11 @@ public interface AlertLogRepository extends JpaRepository<AlertLog, Long>{
      * 個人提醒列表 (by UserId & Channel)
      */
     List<AlertLog> findByUser_IdAndChannel(Long userId, AlertLog.NotificationChannel channel);
+    
+    
+    /**
+     * 找出某個使用者的WEB_PUSH的所有提醒歷史 (按時間降冪排序，最新的在前)
+     */
+    List<AlertLog> findByUser_IdAndChannelOrderByAlertTimeDesc(Long userId, AlertLog.NotificationChannel channel);
+    
 }

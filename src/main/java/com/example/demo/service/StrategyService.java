@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,8 @@ public class StrategyService {
 		// 3. 取得最新一筆價格 (List 的第 0 筆)
 		double currentPrice = history20.get(0).getClosePrice();
 
+		LocalDate date = history20.get(0).getDate();
+
 		// 4. 計算偏離率 (Bias)
 		double bias = (currentPrice - ma20) / ma20;
 
@@ -57,6 +60,7 @@ public class StrategyService {
 				.ma20(ma20).bias(bias)
 				.action(action)
 				.shouldNotify(shouldNotify)
+				.date(date)
 				.build();
 	}
 

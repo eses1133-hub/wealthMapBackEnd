@@ -106,16 +106,16 @@ public class NotificationService {
     }
     
     
-    public void saveNotification(Long userId, String message) {
+    public void saveAlertLog(Long id, String message) {
 
-        Notification entity = new Notification();
+        AlertLog entity = new AlertLog();
 
-        entity.setUserId(userId); // ⚠️ 前提：你的 Entity 要有這欄位
+        entity.setId(id); // ⚠️ 前提：你的 Entity 要有這欄位
         entity.setTitle("繳款提醒");
         entity.setContent(message);
-        entity.setScheduledDate(LocalDate.now());
+        entity.setAlertTime(LocalDateTime.now());
 
-        notificationRepository.save(entity);
+        alertLogRepository.save(entity);
     }
 
     // 3. 刪除
@@ -210,8 +210,10 @@ public class NotificationService {
      * 取得個人提醒列表 (by UserId & Channel)
      */
     public List<AlertLog> getPersonalAlerts(Long userId) {
-    
-        return alertLogRepository.findByUser_IdAndChannel(userId, AlertLog.NotificationChannel.WEB_PUSH);
+    	// 這裡先固定為 WEB_PUSH
+        AlertLog.NotificationChannel channel = AlertLog.NotificationChannel.WEB_PUSH;
+        // 調用 Repository 查詢
+        return alertLogRepository.findByUser_IdAndChannelOrderByAlertTimeDesc(userId, channel);
     }
 
 }

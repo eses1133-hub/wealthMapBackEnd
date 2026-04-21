@@ -53,7 +53,7 @@ public class DebtScheduler {
 			System.out.println("發送給 userId: " + userId + " | 訊息: " + message);
 			sseService.sendMessage(userId, message);
 			emailService.sendSimpleEmail("chssrtan789@gmail.com", "繳款提醒", message);
-			notificationService.saveNotification(debt.getUserId(), message);
+			notificationService.saveAlertLog(debt.getUserId(), message);
 		}
 	}
 
