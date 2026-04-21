@@ -6,28 +6,24 @@ import java.util.List;
 
 import org.hibernate.annotations.BatchSize;
 
+import com.example.demo.constant.RiskLevel; // 引入我們寫好的 Enum
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;   // 新增 Enum 型別定義
+import jakarta.persistence.Enumerated; // 新增 Enum 註解
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-<<<<<<< Updated upstream
-import jakarta.persistence.Enumerated; // 新增 Enum 註解
-import jakarta.persistence.EnumType;   // 新增 Enum 型別定義
-import com.example.demo.constant.RiskLevel; // 引入我們寫好的 Enum
-=======
-import lombok.Getter;
-import lombok.Setter;
->>>>>>> Stashed changes
+import lombok.Data;
 
 @Entity
 @Table(name = "users")
-@Getter
-@Setter
+@Data
 public class User {
 	
     @Id	
@@ -58,10 +54,8 @@ public class User {
     
     //一個user可擁有很多資產，cascade = CascadeType.ALL=級聯操作
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-<<<<<<< Updated upstream
-=======
+
     @BatchSize(size = 10)
->>>>>>> Stashed changes
     private List<Asset> assets = new ArrayList<>();
     
     //一個user可擁有很多交易紀錄

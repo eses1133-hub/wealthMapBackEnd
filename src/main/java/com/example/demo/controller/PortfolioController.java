@@ -1,16 +1,21 @@
 package com.example.demo.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import com.example.demo.entity.User;
-import com.example.demo.repository.UserRepository;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.constant.RiskLevel;
+import com.example.demo.entity.User;
+import com.example.demo.repository.UserRepository;
 
 @RestController
 @RequestMapping("/api/portfolio")
@@ -27,8 +32,8 @@ public class PortfolioController {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("找不到使用者"));
             
-            String level = user.getRiskLevel();
-            if (level == null || level.isEmpty()) {
+            RiskLevel level = user.getRiskLevel();
+            if (level == null ) {
                 return ResponseEntity.badRequest().body("該使用者尚未進行風險評估");
             }
 
@@ -36,7 +41,7 @@ public class PortfolioController {
             List<Map<String, String>> recommendations = new ArrayList<>();
 
             // 3. 根據屬性給予不同的推薦標的 (你可以自由修改這些標的)
-            switch (level) {
+            switch (level.name()) {
                 case "CONSERVATIVE": // 保守型
                     recommendations.add(Map.of("name", "美國短期公債 ETF", "symbol", "SHV", "type", "債券", "description", "極低風險，適合資金停泊"));
                     recommendations.add(Map.of("name", "綜合債券 ETF", "symbol", "BND", "type", "債券", "description", "穩定配息，波動小"));
