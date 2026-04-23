@@ -194,6 +194,7 @@ public class NotificationService {
         
         // 2. 抓出該使用者所有已讀的 ID 清單 (假設你有一個 ReadRepository)
         List<Long> readIds = notificationReadRepository.findNotificationIdsByUserId(userId);
+        
 
         // 3. 組裝成 DTO 回傳
         return allNotifications.stream().map(n -> {

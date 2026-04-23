@@ -116,6 +116,7 @@ public class SecurityConfig {
                 .requestMatchers("/by-email").permitAll()
                 .requestMatchers("/api/strategy-api/**").permitAll()
                 .requestMatchers("/api/strategy-set/**").permitAll()
+                .requestMatchers("/api/risk/**").permitAll()
                 .requestMatchers("/api/auth/**","/api/monte/**").permitAll()
                 .requestMatchers("/send-email").permitAll()
 
