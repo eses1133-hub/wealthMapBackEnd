@@ -103,7 +103,7 @@ public class SecurityConfig {
                 // 因為訪客可以看到系統公告和新聞 所以放在5前面
                 .requestMatchers("/api/notifications/**").permitAll()
                 .requestMatchers("/api/news/**").permitAll()
-                
+                .requestMatchers("/api/risk/**").permitAll()
                 // 5. 熱門設施：只要有手環 (USER/ADMIN) 都能玩
                 .requestMatchers("/api/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                 // 6. 剩下的神祕區域，通通要檢查身分
