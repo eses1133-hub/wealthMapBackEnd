@@ -99,14 +99,14 @@ public class SecurityConfig {
                 // 3. 園區服務台 (Error)：放行
                 .requestMatchers("/error").permitAll()
                 // 4. 管理員辦公室：只有「園區經理」(ADMIN) 才能進
-                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+//                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                 
                 // 因為訪客可以看到系統公告和新聞 所以放在5前面
                 .requestMatchers("/api/notifications/**").permitAll()
                 .requestMatchers("/api/news/**").permitAll()
                 .requestMatchers("/api/risk/**").permitAll()
                 // 5. 熱門設施：只要有手環 (USER/ADMIN) 都能玩
-                .requestMatchers("/api/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+//                .requestMatchers("/api/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                 // 6. 剩下的神祕區域，通通要檢查身分
                 
                 
