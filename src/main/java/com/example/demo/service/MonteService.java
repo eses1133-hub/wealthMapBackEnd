@@ -11,11 +11,9 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.MonteResponseDTO;
 import com.example.demo.dto.YearlyDataDTO;
-import com.example.demo.entity.AssetParameter;
 import com.example.demo.entity.Investment;
 import com.example.demo.entity.MonteCarloSimulation;
 import com.example.demo.entity.User;
-import com.example.demo.repository.AssetParameterRepository;
 import com.example.demo.repository.MonteRepository;
 import com.example.demo.repository.UserRepository;
 
@@ -29,9 +27,7 @@ public class MonteService {
 
     @Autowired
     private UserRepository userRepository; //找 User 物件
-    @Autowired
-    private AssetParameterRepository assetRepo;
-    
+
     public MonteResponseDTO calculateSimulation(
             Long userId, double monthly, int years, BigDecimal initialAmount,
             Map<String, Double> allocations, double inflationRate) {
@@ -42,13 +38,17 @@ public class MonteService {
         // 1. 計算資產配置的平均報酬與標準差
         double totalAvg = 0;
         double totalStd = 0;
+     
         for (Map.Entry<String, Double> entry : allocations.entrySet()) {
-            AssetParameter param = assetRepo.findByAssetName(entry.getKey())
-                .orElseThrow(() -> new RuntimeException("資料庫找不到資產：" + entry.getKey()));
+            double[] data = ASSET_CONFIG.get(entry.getKey());
+            
+            if (data == null) {
+                throw new RuntimeException("無效的資產類型：" + entry.getKey());
+            }
             
             double ratio = entry.getValue();
-            totalAvg += param.getAvgReturn().doubleValue() * ratio;
-            totalStd += param.getStdDev().doubleValue() * ratio;
+            totalAvg += data[0] * ratio; 
+            totalStd += data[1] * ratio; 
         }
 
         // 2. 初始化模擬參數
@@ -143,4 +143,10 @@ public class MonteService {
 
         return response;
     }
+    private static final Map<String, double[]> ASSET_CONFIG = Map.of(
+            "STOCK", new double[]{0.08, 0.18},
+            "BOND",  new double[]{0.02, 0.04},
+            "GOLD",  new double[]{0.04, 0.15},
+            "CASH",  new double[]{0.015, 0.005}
+    );
 }
