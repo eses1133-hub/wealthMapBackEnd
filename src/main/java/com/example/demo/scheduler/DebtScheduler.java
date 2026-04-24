@@ -33,7 +33,7 @@ public class DebtScheduler {
 	@Autowired
 	private NotificationService notificationService;
 
-	@Scheduled(fixedRate = 1000000) // 每10秒跑一次(測試用)
+	@Scheduled(fixedRate = 86400000) // 每10秒跑一次(測試用)
 	public void checkDueDebts() {
 
 		int today = LocalDate.now().getDayOfMonth();
@@ -48,12 +48,20 @@ public class DebtScheduler {
 
 			String message = "【繳款提醒】" + debt.getDebtName() + "本月需繳款，預計剩餘" + (int) months + "個月可還清";
 
-			String userId = String.valueOf(debt.getUserId());
+			Long userId = debt.getUser().getId();
 
+			
+			String email = debt.getUser().getEmail();
 			System.out.println("發送給 userId: " + userId + " | 訊息: " + message);
+			
+			//SSE發送
 			sseService.sendMessage(userId, message);
-			emailService.sendSimpleEmail("chssrtan789@gmail.com", "繳款提醒", message);
-			notificationService.saveAlertLog(debt.getUserId(), message);
+			
+			//Email發送
+			emailService.sendSimpleEmail(email, "繳款提醒", message);
+			
+			//存入DB
+			notificationService.saveAlertLog(userId, message);
 		}
 	}
 

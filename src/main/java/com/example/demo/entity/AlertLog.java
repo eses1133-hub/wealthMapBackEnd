@@ -27,7 +27,7 @@ public class AlertLog {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-//	private Long userId;
+	
 	@ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
 	@JsonIgnore

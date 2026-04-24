@@ -22,7 +22,7 @@ public class SseService {
 		return emitter;
 	}
 	
-	public void sendMessage(String userId, String message) {
+	public void sendMessage(Long userId, String message) {
 		SseEmitter emitter = clients.get(userId);
 		
 		if(emitter != null) {

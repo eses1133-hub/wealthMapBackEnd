@@ -19,9 +19,11 @@ import com.example.demo.dto.NotificationListDTO;
 import com.example.demo.entity.AlertLog;
 import com.example.demo.entity.Notification;
 import com.example.demo.entity.SystemNotificationRead;
+import com.example.demo.entity.User;
 import com.example.demo.repository.AlertLogRepository;
 import com.example.demo.repository.NotificationReadRepository;
 import com.example.demo.repository.NotificationRepository;
+import com.example.demo.repository.UserRepository;
 
 
 @Service
@@ -36,6 +38,9 @@ public class NotificationService {
 	
 	@Autowired
 	private NotificationReadRepository notificationReadRepository;
+	
+	@Autowired
+	private UserRepository userRepository;
 	
 	// 核心：用來存放 userId -> SseEmitter 的對應關係
 	// 使用 ConcurrentHashMap 確保執行緒安全
@@ -106,11 +111,14 @@ public class NotificationService {
     }
     
     
-    public void saveAlertLog(Long id, String message) {
+    public void saveAlertLog(Long userId, String message) {
 
+    	User user = userRepository.findById(userId)
+    		    .orElseThrow();
+    	
         AlertLog entity = new AlertLog();
 
-        entity.setId(id); // ⚠️ 前提：你的 Entity 要有這欄位
+        entity.setUser(user); // ⚠️ 前提：你的 Entity 要有這欄位
         entity.setTitle("繳款提醒");
         entity.setContent(message);
         entity.setAlertTime(LocalDateTime.now());
