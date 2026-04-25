@@ -29,7 +29,7 @@ public class RiskAssessmentService {
     @Transactional
     public RiskAssessment evaluateAndSave(RiskAssessment assessment) {
         
-        // 1. 計算總分 (把前端傳來的 6 題分數加總)
+        // 1. 計算總分 (6題，每題1-5分，總分範圍 6 ~ 30)
         int totalScore = assessment.getAgeScore() + 
                          assessment.getAllocationScore() + 
                          assessment.getDurationScore() + 
@@ -37,27 +37,25 @@ public class RiskAssessmentService {
                          assessment.getKnowledgeScore() + 
                          assessment.getToleranceScore();
 
-        // 2. 根據總分判斷風險屬性 (分數區間你可以依照你們的企劃調整)
+        // 🌟 2. 調整後的靈敏門檻 (讓總分 30 分的人能測到 AGGRESSIVE)
         String level = "";
-        if (totalScore <= 12) {
-            level = "CONSERVATIVE"; // 保守型
-        } else if (totalScore <= 22) {
-            level = "DEFENSIVE";    // 穩健型
-        } else if (totalScore <= 32) {
-            level = "BALANCED";     // 平衡型
-        } else if (totalScore <= 42) {
-            level = "GROWTH";       // 積極型
+        if (totalScore <= 10) {
+            level = "CONSERVATIVE"; // 保守
+        } else if (totalScore <= 15) {
+            level = "DEFENSIVE";    // 穩健
+        } else if (totalScore <= 20) {
+            level = "BALANCED";     // 平衡
+        } else if (totalScore <= 25) {
+            level = "GROWTH";       // 積極
         } else {
-            level = "AGGRESSIVE";   // 衝刺型
+            level = "AGGRESSIVE";   // 衝刺
         }
 
-        // 3. 把算出來的等級塞回問卷結果中
         assessment.setRiskLevel(level);
 
-        // 4. 呼叫 Repository 幫忙存進資料庫，並回傳存好的整包資料
+        // 3. 儲存結果
         return riskAssessmentRepository.save(assessment);
     }
-
     // ==========================================
     // 下面是你原本就寫好的其他功能，我幫你原封不動保留！
     // ==========================================
