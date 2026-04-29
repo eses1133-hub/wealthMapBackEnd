@@ -1,15 +1,18 @@
 package com.example.demo.service;
-import com.example.demo.dto.FinMindResponseDTO;
+import com.example.demo.dto.BaseFinMindResponse;
 import com.example.demo.dto.StockDataDTO;
+import com.example.demo.dto.StockIdNameDTO;
 import com.example.demo.dto.StrategyDTO;
 import com.example.demo.entity.AlertLog;
 import com.example.demo.entity.AlertLog.AlertCategory;
 import com.example.demo.entity.StockPrice;
 import com.example.demo.entity.StrategySetting;
+import com.example.demo.entity.TaiwanStockList;
 import com.example.demo.repository.AlertLogRepository;
 import com.example.demo.repository.AssetRepository;
 import com.example.demo.repository.StockPriceRepository;
 import com.example.demo.repository.StrategySettingRepository;
+import com.example.demo.repository.TaiwanStockListRepository;
 import com.example.demo.vo.AppResponse;
 
 import jakarta.transaction.Transactional;
@@ -18,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -74,6 +78,9 @@ public class StockService {
 	@Autowired
 	private NotificationService notificationService;
 	
+	@Autowired 
+	private TaiwanStockListRepository taiwanStockListRepository;
+	
 	/**
 	 * 核心業務邏輯：執行 API 抓取 此方法為 Public，可供 Controller 手動呼叫，也可供 @Scheduled 自動呼叫
 	 */
@@ -82,7 +89,7 @@ public class StockService {
 		List<String> symbols = assetRepository.findDistinctStockSymbols();
 		
 		if (symbols.isEmpty()) {
-            log.warn("目前資產庫中沒有任何股票(type='stock')，跳過任務。");
+            log.warn("目前資產庫中沒有任何股票(type='STOCK')，跳過任務。");
             return;
         }
 
@@ -146,10 +153,10 @@ public class StockService {
 				.queryParam("start_date", startDate).queryParam("end_date", endDate).toUriString();
 		try {
 			// --- D. 發送請求 ---
-			ResponseEntity<FinMindResponseDTO> response = restTemplate.exchange(url, HttpMethod.GET, entity,
-					FinMindResponseDTO.class);
+			ResponseEntity<BaseFinMindResponse<StockDataDTO>> response = restTemplate.exchange(url, HttpMethod.GET, entity,
+					new ParameterizedTypeReference<BaseFinMindResponse<StockDataDTO>>() {});
 			// --- E. 資料解析與防呆機制 ---
-			FinMindResponseDTO body = response.getBody();
+			BaseFinMindResponse<StockDataDTO> body = response.getBody();
 			if (body != null && "success".equals(body.getMsg()) && body.getData() != null) {
 
 				List<StockDataDTO> stockList = body.getData();
@@ -456,7 +463,7 @@ public class StockService {
 
     
 	/**
-	 * 排程觸發點 設定：每週一至週五，下午 14:00 執行 (台股收盤後且資料更新後) 指定時區：Asia/Taipei 確保在雲端環境也能準時執行
+	 * 排程觸發點 設定：每週一至週五，下午 14:30 執行 (台股收盤後且資料更新後) 指定時區：Asia/Taipei 確保在雲端環境也能準時執行
 	 */
 	@Scheduled(cron = "0 30 14 * * MON-FRI", zone = "Asia/Taipei")
 	public void scheduledTask() {
@@ -500,6 +507,65 @@ public class StockService {
 	    dto.setBias(latest.getBias());
 	    dto.setDate(latest.getDate());	    
 	    return dto;
+	}
+	
+	
+	/**
+     * 紀錄每日台股總覽:供建立資產使用，每天更新一次 by carly
+     * 現在它的職責是：1. 設定API，並呼叫API  2. 存入資料
+     */
+	@Transactional
+	public void fetchTWStockApi() {
+		
+		// --- B. 設定請求標頭 (Headers) ---
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Authorization", "Bearer " + apiToken);
+		HttpEntity<String> entity = new HttpEntity<>(headers);
+		// --- C. 動態建構 URL ---
+		String url = UriComponentsBuilder.fromUriString("https://api.finmindtrade.com/api/v4/data")
+				.queryParam("dataset", "TaiwanStockInfo").toUriString();
+		try {
+			// --- D. 發送請求 ---
+			ResponseEntity<BaseFinMindResponse<StockIdNameDTO>> response = restTemplate.exchange(url, HttpMethod.GET, entity,
+					new ParameterizedTypeReference<BaseFinMindResponse<StockIdNameDTO>>() {});
+			// --- E. 資料解析與防呆機制 ---
+			BaseFinMindResponse<StockIdNameDTO> body = response.getBody();
+			if (body != null && "success".equals(body.getMsg()) && body.getData() != null) {
+
+				List<StockIdNameDTO> stockList = body.getData();
+				// 檢查是否有回傳資料，避免存取 index 0 時噴錯
+				if (!stockList.isEmpty()) {
+	                List<TaiwanStockList> entities = stockList.stream()
+	                		.filter(dto -> dto.getStockId().length() <= 15)
+	                		.map(dto -> {
+			                    TaiwanStockList stock = new TaiwanStockList();
+			                    stock.setStockId(dto.getStockId());
+			                    stock.setStockName(dto.getStockName());
+			                    stock.setIndustryCategory(dto.getIndustryCategory());
+			                    stock.setUpdateTime(LocalDateTime.now());
+			                    return stock;
+			                }).collect(Collectors.toList());
+
+	                // 批次更新：saveAll 會處理 Insert 或 Update
+	                taiwanStockListRepository.saveAll(entities);
+	                log.info(">>> 台股清單同步完成！共計 {} 檔股票", entities.size());
+				} else {
+					log.warn("查無資料。");
+				}
+			}
+
+		} catch (Exception e) {
+			log.error("抓取台股清單失敗: {}", e.getMessage());
+		}
+	}
+	
+	/**
+	 * 排程觸發點 設定：每週一至週五，08:00 執行 (台股收盤後且資料更新後) 指定時區：Asia/Taipei 確保在雲端環境也能準時執行
+	 */
+	@Scheduled(cron = "0 30 08 * * MON-FRI", zone = "Asia/Taipei")
+	public void scheduledEarlyTask() {
+		log.info("=== 定時排程啟動 ===");
+		fetchTWStockApi();
 	}
 	
 }
