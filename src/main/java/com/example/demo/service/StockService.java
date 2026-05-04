@@ -1,15 +1,18 @@
 package com.example.demo.service;
-import com.example.demo.dto.FinMindResponseDTO;
+import com.example.demo.dto.BaseFinMindResponse;
 import com.example.demo.dto.StockDataDTO;
+import com.example.demo.dto.StockIdNameDTO;
 import com.example.demo.dto.StrategyDTO;
 import com.example.demo.entity.AlertLog;
 import com.example.demo.entity.AlertLog.AlertCategory;
 import com.example.demo.entity.StockPrice;
 import com.example.demo.entity.StrategySetting;
+import com.example.demo.entity.TaiwanStockList;
 import com.example.demo.repository.AlertLogRepository;
 import com.example.demo.repository.AssetRepository;
 import com.example.demo.repository.StockPriceRepository;
 import com.example.demo.repository.StrategySettingRepository;
+import com.example.demo.repository.TaiwanStockListRepository;
 import com.example.demo.vo.AppResponse;
 
 import jakarta.transaction.Transactional;
@@ -18,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -45,8 +49,12 @@ public class StockService {
 	private static final Logger log = LoggerFactory.getLogger(StockService.class);
 
 	private final RestTemplate restTemplate = new RestTemplate();
+	
+	// 1. 使用 @Value 注入 properties 中的值
+    @Value("${finmind.api.token}")
+    private String apiToken;
 	// 建議：將 Token 放在配置文件中，這裡示範直接定義
-	private final String API_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wMy0xOSAxNzoyNToxNyIsInVzZXJfaWQiOiJlc2VzMTExMyIsImVtYWlsIjoiamluZ3lpODYxMjExQGdtYWlsLmNvbSIsImlwIjoiMjAzLjY5LjkxLjE3MiJ9.0JW_6Chy6XJB28WAgiLZoDmUsY9ChjS9hA5dy0QYgvw";
+//	private final String API_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wMy0xOSAxNzoyNToxNyIsInVzZXJfaWQiOiJlc2VzMTExMyIsImVtYWlsIjoiamluZ3lpODYxMjExQGdtYWlsLmNvbSIsImlwIjoiMjAzLjY5LjkxLjE3MiJ9.0JW_6Chy6XJB28WAgiLZoDmUsY9ChjS9hA5dy0QYgvw";
 
 	@Autowired
     private AssetRepository assetRepository;
@@ -70,6 +78,9 @@ public class StockService {
 	@Autowired
 	private NotificationService notificationService;
 	
+	@Autowired 
+	private TaiwanStockListRepository taiwanStockListRepository;
+	
 	/**
 	 * 核心業務邏輯：執行 API 抓取 此方法為 Public，可供 Controller 手動呼叫，也可供 @Scheduled 自動呼叫
 	 */
@@ -78,7 +89,7 @@ public class StockService {
 		List<String> symbols = assetRepository.findDistinctStockSymbols();
 		
 		if (symbols.isEmpty()) {
-            log.warn("目前資產庫中沒有任何股票(type='stock')，跳過任務。");
+            log.warn("目前資產庫中沒有任何股票(type='STOCK')，跳過任務。");
             return;
         }
 
@@ -134,7 +145,7 @@ public class StockService {
 		
 		// --- B. 設定請求標頭 (Headers) ---
 		HttpHeaders headers = new HttpHeaders();
-		headers.set("Authorization", "Bearer " + API_TOKEN);
+		headers.set("Authorization", "Bearer " + apiToken);
 		HttpEntity<String> entity = new HttpEntity<>(headers);
 		// --- C. 動態建構 URL ---
 		String url = UriComponentsBuilder.fromUriString("https://api.finmindtrade.com/api/v4/data")
@@ -142,10 +153,10 @@ public class StockService {
 				.queryParam("start_date", startDate).queryParam("end_date", endDate).toUriString();
 		try {
 			// --- D. 發送請求 ---
-			ResponseEntity<FinMindResponseDTO> response = restTemplate.exchange(url, HttpMethod.GET, entity,
-					FinMindResponseDTO.class);
+			ResponseEntity<BaseFinMindResponse<StockDataDTO>> response = restTemplate.exchange(url, HttpMethod.GET, entity,
+					new ParameterizedTypeReference<BaseFinMindResponse<StockDataDTO>>() {});
 			// --- E. 資料解析與防呆機制 ---
-			FinMindResponseDTO body = response.getBody();
+			BaseFinMindResponse<StockDataDTO> body = response.getBody();
 			if (body != null && "success".equals(body.getMsg()) && body.getData() != null) {
 
 				List<StockDataDTO> stockList = body.getData();
@@ -179,12 +190,13 @@ public class StockService {
 						stockPriceRepository.saveAll(newStockPrice);
 						log.info(">>> 成功存入 {} 筆新資料！", newStockPrice.size());
 						
-						// 資料存完後，觸發計算乖離率與通知
-					    this.checkAndNotifyStrategy(symbol);
-			            // 若需要跑過去20筆資料，可先將上方function註解
+
 					} else {
 						log.info(">>> 資料已存在，本次無須更新。");
 					}
+					// 資料存完後，觸發計算乖離率與通知
+				    this.checkAndNotifyStrategy(symbol);
+		            // 若需要跑過去20筆資料，可先將上方function註解
 				} else {
 					log.warn("API 請求成功，但該時段內無交易資料（可能為非交易日）。");
 				}
@@ -272,10 +284,14 @@ public class StockService {
 		    
 			// 如果達到門檻且需要觸發
 		    if (action != null) {
+		    	try {
 				// 【執行發送】 by mail
 				executeEmailNotification(setting, currentData, action);
 				// by SSE/WEB_PUSH
 				executeSseNotification(setting, currentData, action);
+		    	}catch(Exception e) {
+		    		log.error(">>> Email 寄送失敗!");
+		    	}
 			}
 		}
 	}
@@ -284,6 +300,7 @@ public class StockService {
      * 功能 C: 執行郵件寄送 (原有的 Log 與 Email 邏輯)
      */
     private void executeEmailNotification(StrategySetting setting, StrategyDTO result, String action) {
+    	log.info(">>> 進入寄信流程：User={}, Stock={}", setting.getUser().getId(), setting.getSymbol());
         // 檢查今天發過沒
 		boolean alreadyNotified = alertLogRepository.existsByUserIdAndTargetIdAndCategoryAndChannelAndAlertTimeAfter(
 	    	    setting.getUser().getId(), 
@@ -292,6 +309,7 @@ public class StockService {
 	    	    AlertLog.NotificationChannel.EMAIL, 
 	    	    LocalDate.now().atStartOfDay()
 	    	);
+		log.info(">>> 是否已通知過: {}", alreadyNotified);
 
         if (!alreadyNotified) {
         	// 【預約提醒】先存入 Log 並標記為 PENDING
@@ -307,8 +325,23 @@ public class StockService {
             pendingLog.setAlertTime(LocalDateTime.now());
 
             AlertLog savedLog = alertLogRepository.save(pendingLog);
-            emailService.sendStrategyEmail(setting.getUser().getEmail(), savedLog);
-            log.info(">>> 已寄送通知給使用者 {}: 股票 {}", setting.getUser().getId(), setting.getSymbol());
+            
+            try {
+            	// 2. 寄信
+                emailService.sendStrategyEmail(setting.getUser().getEmail(), savedLog);
+                
+                // 3. 寄信成功後，將狀態改為 SENT
+                savedLog.setStatus(AlertLog.AlertStatus.SENT);
+                alertLogRepository.save(savedLog);
+                log.info(">>> Email 寄送成功: {}", setting.getSymbol());
+            }catch(Exception e){
+            	// 4. 失敗時記錄原因，狀態改為 FAILED
+                savedLog.setStatus(AlertLog.AlertStatus.FAILED);
+                alertLogRepository.save(savedLog);
+                log.error(">>> Email 寄送失敗! 股票: {}, 原因: {}", setting.getSymbol(), e.getMessage());
+            }
+        }else {
+            log.warn(">>> 今天已寄送過，跳過流程");
         }
     }
     
@@ -430,9 +463,9 @@ public class StockService {
 
     
 	/**
-	 * 排程觸發點 設定：每週一至週五，下午 14:00 執行 (台股收盤後且資料更新後) 指定時區：Asia/Taipei 確保在雲端環境也能準時執行
+	 * 排程觸發點 設定：每週一至週五，下午 14:30 執行 (台股收盤後且資料更新後) 指定時區：Asia/Taipei 確保在雲端環境也能準時執行
 	 */
-	@Scheduled(cron = "0 00 14 * * MON-FRI", zone = "Asia/Taipei")
+	@Scheduled(cron = "0 30 14 * * MON-FRI", zone = "Asia/Taipei")
 	public void scheduledTask() {
 		log.info("=== 定時排程啟動 ===");
 		executeFetch();
@@ -474,6 +507,65 @@ public class StockService {
 	    dto.setBias(latest.getBias());
 	    dto.setDate(latest.getDate());	    
 	    return dto;
+	}
+	
+	
+	/**
+     * 紀錄每日台股總覽:供建立資產使用，每天更新一次 by carly
+     * 現在它的職責是：1. 設定API，並呼叫API  2. 存入資料
+     */
+	@Transactional
+	public void fetchTWStockApi() {
+		
+		// --- B. 設定請求標頭 (Headers) ---
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Authorization", "Bearer " + apiToken);
+		HttpEntity<String> entity = new HttpEntity<>(headers);
+		// --- C. 動態建構 URL ---
+		String url = UriComponentsBuilder.fromUriString("https://api.finmindtrade.com/api/v4/data")
+				.queryParam("dataset", "TaiwanStockInfo").toUriString();
+		try {
+			// --- D. 發送請求 ---
+			ResponseEntity<BaseFinMindResponse<StockIdNameDTO>> response = restTemplate.exchange(url, HttpMethod.GET, entity,
+					new ParameterizedTypeReference<BaseFinMindResponse<StockIdNameDTO>>() {});
+			// --- E. 資料解析與防呆機制 ---
+			BaseFinMindResponse<StockIdNameDTO> body = response.getBody();
+			if (body != null && "success".equals(body.getMsg()) && body.getData() != null) {
+
+				List<StockIdNameDTO> stockList = body.getData();
+				// 檢查是否有回傳資料，避免存取 index 0 時噴錯
+				if (!stockList.isEmpty()) {
+	                List<TaiwanStockList> entities = stockList.stream()
+	                		.filter(dto -> dto.getStockId().length() <= 15)
+	                		.map(dto -> {
+			                    TaiwanStockList stock = new TaiwanStockList();
+			                    stock.setStockId(dto.getStockId());
+			                    stock.setStockName(dto.getStockName());
+			                    stock.setIndustryCategory(dto.getIndustryCategory());
+			                    stock.setUpdateTime(LocalDateTime.now());
+			                    return stock;
+			                }).collect(Collectors.toList());
+
+	                // 批次更新：saveAll 會處理 Insert 或 Update
+	                taiwanStockListRepository.saveAll(entities);
+	                log.info(">>> 台股清單同步完成！共計 {} 檔股票", entities.size());
+				} else {
+					log.warn("查無資料。");
+				}
+			}
+
+		} catch (Exception e) {
+			log.error("抓取台股清單失敗: {}", e.getMessage());
+		}
+	}
+	
+	/**
+	 * 排程觸發點 設定：每週一至週五，08:00 執行 (台股收盤後且資料更新後) 指定時區：Asia/Taipei 確保在雲端環境也能準時執行
+	 */
+	@Scheduled(cron = "0 30 08 * * MON-FRI", zone = "Asia/Taipei")
+	public void scheduledEarlyTask() {
+		log.info("=== 定時排程啟動 ===");
+		fetchTWStockApi();
 	}
 	
 }

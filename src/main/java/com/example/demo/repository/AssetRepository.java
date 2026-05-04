@@ -15,7 +15,7 @@ import java.util.List;
 @Repository
 public interface AssetRepository extends JpaRepository<Asset, Long> {
 	// 找出所有類型為 'stock' 的資產，並只回傳不重複的股票代號
-    @Query("SELECT DISTINCT a.symbol FROM Asset a WHERE a.type = 'stock'")
+    @Query("SELECT DISTINCT a.symbol FROM Asset a WHERE a.type = 'STOCK'")
     List<String> findDistinctStockSymbols();
     
     List<Asset> findByUserId(Long userId);
@@ -26,6 +26,8 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     
     @Query("SELECT a.symbol FROM Asset a " +
     	       "WHERE a.user.id = :userId " +
+    	       "AND a.type = 'STOCK' " +
+    	       "AND a.symbol is not null " +
     	       "AND NOT EXISTS (" +
     	       "    SELECT s FROM StrategySetting s " +
     	       "    WHERE s.user.id = :userId AND s.symbol = a.symbol" +

@@ -25,79 +25,138 @@ public class RiskAssessmentService {
         this.userRepository = userRepository;
         this.riskAssessmentRepository = riskAssessmentRepository;
     }
-
-    @Transactional
-    public RiskAssessment evaluateAndSave(RiskAssessment assessment) {
-        
-        // 1. 計算總分 (把前端傳來的 6 題分數加總)
-        int totalScore = assessment.getAgeScore() + 
-                         assessment.getAllocationScore() + 
-                         assessment.getDurationScore() + 
-                         assessment.getExperienceScore() + 
-                         assessment.getKnowledgeScore() + 
-                         assessment.getToleranceScore();
-
-        // 2. 根據總分判斷風險屬性 (分數區間你可以依照你們的企劃調整)
-        String level = "";
-        if (totalScore <= 12) {
-            level = "CONSERVATIVE"; // 保守型
-        } else if (totalScore <= 22) {
-            level = "DEFENSIVE";    // 穩健型
-        } else if (totalScore <= 32) {
-            level = "BALANCED";     // 平衡型
-        } else if (totalScore <= 42) {
-            level = "GROWTH";       // 積極型
-        } else {
-            level = "AGGRESSIVE";   // 衝刺型
-        }
-
-        // 3. 把算出來的等級塞回問卷結果中
-        assessment.setRiskLevel(level);
-
-        // 4. 呼叫 Repository 幫忙存進資料庫，並回傳存好的整包資料
-        return riskAssessmentRepository.save(assessment);
-    }
-
-    // ==========================================
-    // 下面是你原本就寫好的其他功能，我幫你原封不動保留！
-    // ==========================================
-    @Transactional
-    public StrategyResponse evaluateRisk(RiskAssessmentRequest request) {
-        // 1. 計算總分 
-        int totalScore = request.calculateTotalScore();
-
-        // 2. 根據總分判定風險屬性
-        RiskLevel userLevel = determineLevel(totalScore);
-
-        // 3. 儲存結果到資料庫 
-        if (request.userId() != null) {
-            User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new RuntimeException("資料庫找不到此使用者 ID: " + request.userId()));
-            
-            user.setRiskLevel(userLevel.name()); // 設定風險等級
-            userRepository.save(user);    // 寫入資料庫
-        }
-
-        Map<String, Integer> allocation = Map.of(
-            "權益型資產 (股票/基金)", userLevel.getEquityPercent(),
-            "固定收益 (債券/定存)", userLevel.getBondPercent(),
-            "另類投資 (房產/黃金)", userLevel.getAltPercent()
-        );
-
-        return new StrategyResponse(
-            userLevel,
-            userLevel, 
-            allocation,
-            "根據您的問卷總分 (" + totalScore + "分)，您的投資屬性為：" + userLevel.getDescription(),
-            false
-        );
-    }
+//	  delete by carly	
+//    @Transactional
+//    public RiskAssessment evaluateAndSave(RiskAssessment assessment) {
+//        
+//        // 1. 計算總分 (6題，每題1-5分，總分範圍 6 ~ 30)
+//        int totalScore = assessment.getAgeScore() + 
+//                         assessment.getAllocationScore() + 
+//                         assessment.getDurationScore() + 
+//                         assessment.getExperienceScore() + 
+//                         assessment.getKnowledgeScore() + 
+//                         assessment.getToleranceScore();
+//
+//        // 🌟 2. 調整後的靈敏門檻 (讓總分 30 分的人能測到 AGGRESSIVE)
+//        String level = "";
+//        if (totalScore <= 10) {
+//            level = "CONSERVATIVE"; // 保守
+//        } else if (totalScore <= 15) {
+//            level = "DEFENSIVE";    // 穩健
+//        } else if (totalScore <= 20) {
+//            level = "BALANCED";     // 平衡
+//        } else if (totalScore <= 25) {
+//            level = "GROWTH";       // 積極
+//        } else {
+//            level = "AGGRESSIVE";   // 衝刺
+//        }
+//
+//        assessment.setRiskLevel(level);
+//
+//        // 3. 儲存結果
+//        return riskAssessmentRepository.save(assessment);
+//    }
+//    // ==========================================
+//    // 下面是你原本就寫好的其他功能，我幫你原封不動保留！
+//    // ==========================================
+//    @Transactional
+//    public StrategyResponse evaluateRisk_old(RiskAssessmentRequest request) {
+//        // 1. 計算總分 
+//        int totalScore = request.calculateTotalScore();
+//
+//        // 2. 根據總分判定風險屬性
+//        RiskLevel userLevel = determineLevel(totalScore);
+//
+//        // 3. 儲存結果到資料庫 
+//        if (request.userId() != null) {
+//            User user = userRepository.findById(request.userId())
+//                .orElseThrow(() -> new RuntimeException("資料庫找不到此使用者 ID: " + request.userId()));
+//            
+//            user.setRiskLevel(userLevel.name()); // 設定風險等級
+//            userRepository.save(user);    // 寫入資料庫
+//        }
+//
+//        Map<String, Integer> allocation = Map.of(
+//            "權益型資產 (股票/基金)", userLevel.getEquityPercent(),
+//            "固定收益 (債券/定存)", userLevel.getBondPercent(),
+//            "另類投資 (房產/黃金)", userLevel.getAltPercent()
+//        );
+//
+//        return new StrategyResponse(
+//            userLevel,
+////            userLevel, 
+//            allocation,
+//            "根據您的問卷總分 (" + totalScore + "分)，您的投資屬性為：" + userLevel.getDescription(),
+//            false
+//        );
+//    }
     
-    private RiskLevel determineLevel(int score) {
-        if (score <= 10) return RiskLevel.CONSERVATIVE;
-        if (score <= 15) return RiskLevel.DEFENSIVE;
-        if (score <= 20) return RiskLevel.BALANCED;
-        if (score <= 25) return RiskLevel.GROWTH;
-        return RiskLevel.AGGRESSIVE;
-    }
+	// fix visitor can fill by carly
+	// 會員模式：計算並儲存
+	@Transactional
+	public StrategyResponse evaluateRisk(RiskAssessmentRequest request) {
+		StrategyResponse response = calculateOnly(request);
+
+		
+		// 只有會員模式 userId > 0 且存在時才存入資料庫
+        if (request.userId() != null && request.userId() > 0) {
+            userRepository.findById(request.userId()).ifPresent(user -> {
+            	user.setRiskLevel(response.userLevel().name());
+                userRepository.save(user);
+            });
+            
+            // 只有會員才需要把題目明細轉成 Entity 存起來
+            RiskAssessment assessment = new RiskAssessment();
+            assessment.setQOneScore(request.qOneScore()); 
+            assessment.setQTwoScore(request.qTwoScore()); 
+            assessment.setQThreeScore(request.qThreeScore()); 
+            assessment.setQFourScore(request.qFourScore()); 
+            assessment.setQFiveScore(request.qFiveScore()); 
+            assessment.setQSixScore(request.qSixScore()); 
+            assessment.setQSevenScore(request.qSevenScore());
+            assessment.setQEightScore(request.qEightScore()); 
+            assessment.setQNineScore(request.qNineScore()); 
+            assessment.setQTenScore(request.qTenScore());  
+            assessment.setRiskLevel(response.userLevel().name());  
+            assessment.setTotalScore(request.calculateTotalScore());  
+            assessment.setUser(userRepository.getReferenceById(request.userId()));
+            riskAssessmentRepository.save(assessment);
+        }
+
+		return response;
+	}
+
+	// 訪客模式：純邏輯計算 (不加 @Transactional，不寫入 DB)
+	public StrategyResponse calculateOnly(RiskAssessmentRequest request) {
+		// 1. 計算總分
+		int totalScore = request.calculateTotalScore();
+		// 2. 從 Enum 取得等級與相關資訊
+		RiskLevel level = RiskLevel.fromScore(totalScore);
+//		RiskLevel level = determineLevel(totalScore);
+
+		
+		// 3. 打包回傳 (對應你前端 Chart.js 需要的結構)
+        return new StrategyResponse(
+    		level,               // "CONSERVATIVE", "DEFENSIVE", "GROWTH"
+//            level,
+            level.getAllocationMap(),    // 從 RiskLevel 拿配比 Map
+            "根據您的問卷總分 (" + totalScore + "分)，" + level.getAdvice(),          // 從 RiskLevel 拿文案
+            request.isRiskOverMatch()  // 警示判斷
+        );
+	}
+    
+   
+
+//	  delete by carly	    
+//    private RiskLevel determineLevel(int score) {
+////        if (score <= 10) return RiskLevel.CONSERVATIVE;
+////        if (score <= 15) return RiskLevel.DEFENSIVE;
+////        if (score <= 20) return RiskLevel.BALANCED;
+////        if (score <= 25) return RiskLevel.GROWTH;
+////        return RiskLevel.AGGRESSIVE;
+//        //according to Fidelity by carly
+//        if (score <= 15) return RiskLevel.CONSERVATIVE;
+//        if (score <= 30) return RiskLevel.DEFENSIVE;
+//        return RiskLevel.GROWTH;
+//    }
 }

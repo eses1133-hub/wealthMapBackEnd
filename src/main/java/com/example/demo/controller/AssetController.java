@@ -5,7 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.entity.Asset;
+import com.example.demo.entity.TaiwanStockList;
 import com.example.demo.entity.User;
+import com.example.demo.repository.TaiwanStockListRepository;
 import com.example.demo.service.AssetService;
 import com.example.demo.service.StockService; 
 import com.example.demo.dto.StrategyDTO;
@@ -13,6 +15,15 @@ import com.example.demo.dto.AssetDTO;
 import com.example.demo.dto.ApiResponseDTO;
 import com.example.demo.dto.TwStockListDTO;
 import com.example.demo.service.StockReferenceService;
+import com.example.demo.vo.AppResponse;
+import com.example.demo.vo.RspCode;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,6 +70,9 @@ public class AssetController {
 
         return new ApiResponseDTO<>(200, "操作成功", finalData);
     }
+	@Autowired
+    private TaiwanStockListRepository stockListRepository;
+    // ---------------------------------------------------------
     // 1. 新增一筆資產 (前端 POST)
     @PostMapping("/{userId}")
     public ResponseEntity<AssetDTO> createAsset(@PathVariable("userId") Long userId, @RequestBody AssetDTO assetDTO) {
@@ -150,4 +164,14 @@ public class AssetController {
 
         return ResponseEntity.ok(updatedDTO);
     }
+
+    // ---------------------------------------------------------
+    // 4. 輸入股票代碼帶出代碼名稱 by carly
+    // ---------------------------------------------------------
+	@GetMapping("/search-stock/{stock_id}")
+	public AppResponse<TaiwanStockList> searchStock(@PathVariable("stock_id") String stock_id) {
+		return stockListRepository.findById(stock_id)
+	            .map(stock -> AppResponse.success(stock))
+	            .orElseGet(() -> AppResponse.error(RspCode.NOT_FOUND)); 
+	}
 }
