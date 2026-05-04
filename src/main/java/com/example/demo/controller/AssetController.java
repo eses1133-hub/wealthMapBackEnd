@@ -42,34 +42,8 @@ public class AssetController {
     private StockService stockService;
     
     
-    // 0. 查詢股票名稱 (前端輸入代號離開時觸發)
-    @GetMapping("/search-stock/{symbol}")
-    public ApiResponseDTO<TwStockListDTO> searchStock(@PathVariable("symbol") String symbol) {
-        
-        TwStockListDTO nameData = stockRefService.getStockNameInfo(symbol);
-
-        Double currentPrice = null; // 預設為 null
-        try {
-            // 呼叫組員寫好的快速報價功能
-            StrategyDTO quote = stockService.getQuickQuote(symbol);
-            if (quote != null) {
-                currentPrice = quote.getCurrentPrice(); // 把股價抓出來
-            }
-        } catch (Exception e) {
-            // 【防護罩】如果隊友的 API 暫時抓不到或出錯，只在後台印出錯誤，不要讓整個網頁當機
-            System.out.println(">>> 呼叫隊友 API 抓取股價失敗：" + e.getMessage());
-        }
-
-        TwStockListDTO finalData = new TwStockListDTO(
-            nameData.stockId(),
-            nameData.stockName(),
-            nameData.industryCategory(),
-            nameData.updateTime(),
-            currentPrice 
-        );
-
-        return new ApiResponseDTO<>(200, "操作成功", finalData);
-    }
+    
+    
 	@Autowired
     private TaiwanStockListRepository stockListRepository;
     // ---------------------------------------------------------
