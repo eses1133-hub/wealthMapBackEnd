@@ -21,10 +21,11 @@ public class StockReferenceService {
         };
 
         return new TwStockListDTO(
-            symbol, 
-            stockName, 
-            "電子/金融/傳產", 
-            LocalDateTime.now().toString()
-        );
+                symbol,
+                stockName,
+                "電子/金融/傳產",
+                LocalDateTime.now().toString(),
+                null 
+            );
     }
 }

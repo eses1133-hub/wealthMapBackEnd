@@ -4,6 +4,7 @@ public record TwStockListDTO(
 		String stockId,
 	    String stockName,
 	    String industryCategory,
-	    String updateTime
+	    String updateTime,
+	    Double currentPrice
 ) {
 }
