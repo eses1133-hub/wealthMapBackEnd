@@ -61,7 +61,10 @@ public class AssetController {
         return ResponseEntity.ok().build(); 
     }
     
-	// 輸入股票代碼帶出代碼名稱 by carly
+
+    // ---------------------------------------------------------
+    // 4. 輸入股票代碼帶出代碼名稱 by carly
+    // ---------------------------------------------------------
 	@GetMapping("/search-stock/{stock_id}")
 	public AppResponse<TaiwanStockList> searchStock(@PathVariable("stock_id") String stock_id) {
 		return stockListRepository.findById(stock_id)

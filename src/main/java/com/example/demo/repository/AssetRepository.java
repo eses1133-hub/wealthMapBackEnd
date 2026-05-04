@@ -27,6 +27,7 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     @Query("SELECT a.symbol FROM Asset a " +
     	       "WHERE a.user.id = :userId " +
     	       "AND a.type = 'STOCK' " +
+    	       "AND a.symbol is not null " +
     	       "AND NOT EXISTS (" +
     	       "    SELECT s FROM StrategySetting s " +
     	       "    WHERE s.user.id = :userId AND s.symbol = a.symbol" +
