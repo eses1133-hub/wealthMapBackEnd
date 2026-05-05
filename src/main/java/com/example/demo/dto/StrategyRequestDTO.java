@@ -4,7 +4,9 @@ import com.example.demo.entity.StrategySetting;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
+/*
+ * 加減碼策略使用
+ */
 public record StrategyRequestDTO(
 	Long id,
 	@NotBlank(message = "股票代號不能為空")

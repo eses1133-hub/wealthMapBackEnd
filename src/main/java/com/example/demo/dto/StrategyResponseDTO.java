@@ -1,5 +1,9 @@
 package com.example.demo.dto;
 
+
+/*
+ * 使用者設定的加減碼門檻
+ */
 public record StrategyResponseDTO(
 	Long id,
     String symbol,
