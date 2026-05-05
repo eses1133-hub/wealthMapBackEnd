@@ -8,12 +8,15 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 //用在前端首頁折線圖
 @Entity
-@Table(name = "asset_history")
+@Table(name = "asset_history", uniqueConstraints = {
+	    @UniqueConstraint(name = "uk_user_record_date", columnNames = {"userId", "record_date"})
+	})
 @Data
 @NoArgsConstructor
 public class AssetHistory {

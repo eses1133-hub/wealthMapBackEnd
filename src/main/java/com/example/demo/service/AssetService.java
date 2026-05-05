@@ -47,7 +47,7 @@ public class AssetService {
     private AssetHistoryRepository historyRepository;
     // 4. 更新當日資產總額
     @Transactional
-    public void syncHistory(Long userId) {
+    public synchronized void syncHistory(Long userId) {
         // 使用 Optional 處理 null，避免 Lambda 報錯 (effectively final 問題)
         final Double currentTotal = Optional.ofNullable(assetRepository.sumAmountByUserId(userId)).orElse(0.0);
         LocalDate today = LocalDate.now();
@@ -60,15 +60,17 @@ public class AssetService {
             return; 
         }
         
-        historyRepository.findByUserIdAndRecordDate(userId, today)
+        historyRepository.findFirstByUserIdAndRecordDateOrderByIdDesc(userId, today)
             .ifPresentOrElse(
                 history -> {
                     history.setTotalAmount(currentTotal);
                     historyRepository.save(history);
+                    System.out.println("User " + userId + " 今日已存在，執行更新。");
                 },
                 () -> {
                     AssetHistory newHistory = new AssetHistory(userId, currentTotal, today);
                     historyRepository.save(newHistory);
+                    System.out.println("User " + userId + " 今日無紀錄，執行新增。");
                 }
             );
     }
