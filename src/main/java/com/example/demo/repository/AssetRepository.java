@@ -18,7 +18,7 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     @Query("SELECT DISTINCT a.symbol FROM Asset a WHERE a.type = 'STOCK'")
     List<String> findDistinctStockSymbols();
     
-    List<Asset> findByUserId(Long userId);
+    List<Asset> findByUserId(@Param("userId")Long userId);
     
 
     @Query("SELECT a.symbol FROM Asset a WHERE a.user.id = :userId ")
@@ -33,4 +33,8 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     	       "    WHERE s.user.id = :userId AND s.symbol = a.symbol" +
     	       ")")
 	List<String> findAvailableSymbolsByUserId(@Param("userId") Long userId);
+    
+    //這是用來計算計使用者的資產總和的 (用在首頁折線圖
+    @Query("SELECT SUM(a.amount) FROM Asset a WHERE a.user.id = :userId")
+    Double sumAmountByUserId(@Param("userId")Long userId);
 }
