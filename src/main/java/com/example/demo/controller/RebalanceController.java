@@ -14,7 +14,7 @@ public class RebalanceController {
     private RebalanceRepository rebalanceRepository;
 
     @GetMapping("/list/{userId}")
-    public List<RebalanceSetting> getList(@PathVariable Long userId) {
+    public List<RebalanceSetting> getList(@PathVariable("userId") Long userId) {
         return rebalanceRepository.findByUserIdAndIsActiveTrue(userId);
     }
 
@@ -24,7 +24,7 @@ public class RebalanceController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable("id") Long id) {
         rebalanceRepository.deleteById(id);
     }
 }
