@@ -33,7 +33,7 @@ public class DebtScheduler {
 	@Autowired
 	private NotificationService notificationService;
 
-	@Scheduled(fixedRate = 86400000) // 每10秒跑一次(測試用)
+	@Scheduled(fixedRate = 86400000)
 	public void checkDueDebts() {
 
 		int today = LocalDate.now().getDayOfMonth();
@@ -50,7 +50,7 @@ public class DebtScheduler {
 
 			Long userId = debt.getUser().getId();
 
-			
+				
 			String email = debt.getUser().getEmail();
 			System.out.println("發送給 userId: " + userId + " | 訊息: " + message);
 			

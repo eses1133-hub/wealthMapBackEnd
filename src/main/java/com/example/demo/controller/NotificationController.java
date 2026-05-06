@@ -16,18 +16,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.demo.dto.NotificationListDTO;
 import com.example.demo.entity.AlertLog;
 import com.example.demo.entity.Notification;
-
-import com.example.demo.service.EmailService;
 import com.example.demo.repository.AlertLogRepository;
-
 import com.example.demo.service.NotificationService;
 import com.example.demo.vo.AppResponse;
 import com.example.demo.vo.RspCode;

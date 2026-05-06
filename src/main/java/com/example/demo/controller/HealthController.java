@@ -2,14 +2,14 @@ package com.example.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.HealthRequestDTO;
 import com.example.demo.dto.HealthResponseDTO;
 import com.example.demo.service.HealthService;
+import com.example.demo.vo.AppResponse;
 
 @RestController
 @RequestMapping("/api/health")
@@ -19,12 +19,11 @@ public class HealthController {
 	@Autowired
 	private HealthService healthService;
 
-	@PostMapping
-	public HealthResponseDTO calculate(@RequestBody HealthRequestDTO req) {
-		return healthService.calculate(req);
+	@GetMapping("/{userId}")
+	public AppResponse<HealthResponseDTO> getHealth(@PathVariable("userId") Long userId) {
+		return AppResponse.success(healthService.calculate(userId));
 	}
 }
-
 
 //	@PostMapping
 //	public Map<String, Object> calculateHealth(@RequestBody HealthRequestDTO req){
