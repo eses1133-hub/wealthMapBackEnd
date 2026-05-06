@@ -99,7 +99,7 @@ public class HealthService {
 		// 🔥 補上你原本算但沒回傳的資料
 		dto.setAssetDistribution(assetDistribution);
 		dto.setLiabilityDistribution(liabilityDistribution);
-		dto.setAdvice(advice);
+		dto.setAdvice(advice);	
 		return dto;
 	}
 

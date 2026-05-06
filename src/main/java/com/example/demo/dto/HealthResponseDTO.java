@@ -20,6 +20,7 @@ public class HealthResponseDTO {
 	private List<String> advice;
 	private Map<String, Double> assetDistribution;
 	private Map<String, Double> liabilityDistribution;
+	
 
 	public HealthResponseDTO(double L, double DTI, double S, double G, double score, boolean hasAsset, boolean hasLiability,double totalAssets,double totalLiabilities) {
 		this.L = L;

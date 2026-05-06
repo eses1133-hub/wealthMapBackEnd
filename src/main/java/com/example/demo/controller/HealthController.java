@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.HealthResponseDTO;
 import com.example.demo.service.HealthService;
-import com.example.demo.vo.AppResponse;
 
 @RestController
 @RequestMapping("/api/health")
@@ -19,11 +18,14 @@ public class HealthController {
 	@Autowired
 	private HealthService healthService;
 
-	@GetMapping("/{userId}")
-	public AppResponse<HealthResponseDTO> getHealth(@PathVariable("userId") Long userId) {
-		return AppResponse.success(healthService.calculate(userId));
-	}
+    @GetMapping("/{userId}")
+    public HealthResponseDTO calculate(
+    		@PathVariable("userId") Long userId) {
+    	
+        return healthService.calculate(userId);
+    }
 }
+
 
 //	@PostMapping
 //	public Map<String, Object> calculateHealth(@RequestBody HealthRequestDTO req){
