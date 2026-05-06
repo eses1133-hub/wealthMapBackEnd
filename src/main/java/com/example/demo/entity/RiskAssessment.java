@@ -11,21 +11,31 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "risk_assessments")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class RiskAssessment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Integer ageScore;
-    private Integer allocationScore;
-    private Integer durationScore;
-    private Integer experienceScore;
-    private Integer knowledgeScore;
-    private Integer toleranceScore;
+    private Integer qOneScore;
+    private Integer qTwoScore;
+    private Integer qThreeScore;
+    private Integer qFourScore;
+    private Integer qFiveScore;
+    private Integer qSixScore;
+    private Integer qSevenScore;
+    private Integer qEightScore;
+    private Integer qNineScore;
+    private Integer qTenScore;
 
     private Integer totalScore;
     private String riskLevel; 
@@ -40,18 +50,6 @@ public class RiskAssessment {
     // --- 自動產生 Getters 和 Setters ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public Integer getAgeScore() { return ageScore; }
-    public void setAgeScore(Integer ageScore) { this.ageScore = ageScore; }
-    public Integer getAllocationScore() { return allocationScore; }
-    public void setAllocationScore(Integer allocationScore) { this.allocationScore = allocationScore; }
-    public Integer getDurationScore() { return durationScore; }
-    public void setDurationScore(Integer durationScore) { this.durationScore = durationScore; }
-    public Integer getExperienceScore() { return experienceScore; }
-    public void setExperienceScore(Integer experienceScore) { this.experienceScore = experienceScore; }
-    public Integer getKnowledgeScore() { return knowledgeScore; }
-    public void setKnowledgeScore(Integer knowledgeScore) { this.knowledgeScore = knowledgeScore; }
-    public Integer getToleranceScore() { return toleranceScore; }
-    public void setToleranceScore(Integer toleranceScore) { this.toleranceScore = toleranceScore; }
     public Integer getTotalScore() { return totalScore; }
     public void setTotalScore(Integer totalScore) { this.totalScore = totalScore; }
     public String getRiskLevel() { return riskLevel; }

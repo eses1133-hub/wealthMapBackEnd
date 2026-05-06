@@ -66,6 +66,7 @@ public class UserController {
                 .orElse(AppResponse.error(RspCode.NOT_FOUND, "User not found"));
     }
     
+    // 查詢該使用者的各種資訊
     @GetMapping("/details")
     public AppResponse<UserProfileDTO> getUserDetailsByEmail(@RequestParam("email") String email) {
 
@@ -76,6 +77,7 @@ public class UserController {
                     dto.setName(user.getName());
                     dto.setEmail(user.getEmail());
                     dto.setRole(user.getRole());
+                    dto.setRiskLevel(user.getRiskLevel());
 
                     // 轉換資產 Assets
                     dto.setAssets(user.getAssets().stream().map(a -> {

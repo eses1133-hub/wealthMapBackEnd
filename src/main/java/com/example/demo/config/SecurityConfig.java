@@ -113,12 +113,15 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/change-password").authenticated() // 4. 修改密碼「必須」登入
                 .requestMatchers("/profile").authenticated()
                 .requestMatchers("/by-email").permitAll()
+                .requestMatchers("/api/assets/**").permitAll()
                 .requestMatchers("/api/strategy-api/**").permitAll()
                 .requestMatchers("/api/strategy-set/**").permitAll()
+                .requestMatchers("/api/rebalance/**").permitAll()
                 .requestMatchers("/api/risk/**").permitAll()
                 .requestMatchers("/api/auth/**","/api/monte/**").permitAll()
                 .requestMatchers("/send-email").permitAll()
                 .requestMatchers("/api/health/**").permitAll()
+                .requestMatchers("/api/asset-history/**").permitAll()
 
 
                 .anyRequest().authenticated()

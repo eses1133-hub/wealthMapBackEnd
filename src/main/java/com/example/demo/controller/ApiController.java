@@ -19,9 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.entity.Asset;
 import com.example.demo.entity.StockPrice;
+import com.example.demo.entity.TaiwanStockList;
 import com.example.demo.repository.AlertLogRepository;
 import com.example.demo.repository.AssetRepository;
 import com.example.demo.repository.StockPriceRepository;
+import com.example.demo.repository.TaiwanStockListRepository;
 import com.example.demo.service.StockService;
 import com.example.demo.vo.AppResponse;
 import com.example.demo.vo.RspCode;
@@ -42,6 +44,9 @@ public class ApiController {
 	
 	@Autowired
     private AlertLogRepository alertLogRepository;
+	
+	@Autowired
+    private TaiwanStockListRepository stockListRepository;
 
 	
 	// 寄送加減碼通知 for 手動測試
@@ -66,8 +71,25 @@ public class ApiController {
 		return AppResponse.success(history);
 	}
 	
+	// 抓取台股總覽列表 for 手動測試
+	@GetMapping("/stock-list")
+	public String fetchStockList() {
+		try {
+			stockService.fetchTWStockApi();
+			return "系統連接成功！";
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "連接失敗: " + e.getMessage();
+		}
+	}
 	
-	
-	
+	// 輸入股票代碼帶出代碼名稱
+	// put in AssetController
+//	@GetMapping("/search-stock/{stock_id}")
+//	public AppResponse<TaiwanStockList> searchStock(@PathVariable("stock_id") String stock_id) {
+//		return stockListRepository.findById(stock_id)
+//	            .map(stock -> AppResponse.success(stock))
+//	            .orElseGet(() -> AppResponse.error(RspCode.NOT_FOUND)); 
+//	}
 
 }
