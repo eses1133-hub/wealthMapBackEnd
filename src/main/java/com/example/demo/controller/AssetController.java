@@ -142,10 +142,16 @@ public class AssetController {
     // ---------------------------------------------------------
     // 4. 輸入股票代碼帶出代碼名稱 by carly
     // ---------------------------------------------------------
-	@GetMapping("/search-stock/{stock_id}")
+    @GetMapping("/search-stock/{stock_id}")
 	public AppResponse<TaiwanStockList> searchStock(@PathVariable("stock_id") String stock_id) {
 		return stockListRepository.findById(stock_id)
 	            .map(stock -> AppResponse.success(stock))
 	            .orElseGet(() -> AppResponse.error(RspCode.NOT_FOUND)); 
 	}
+    
+//    @GetMapping("/sync-stocks-now")
+//    public ResponseEntity<String> syncTaiwanStocksManually() {
+//        stockService.fetchTWStockApi(); 
+//        return ResponseEntity.ok("✅ 手動觸發台股清單同步成功！請查看後端 Console 確認進度。");
+//    }
 }
