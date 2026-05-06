@@ -37,4 +37,11 @@ public class CashFlowController {
         cashFlowService.deleteRecord(id);
         return ResponseEntity.ok().build();
     }
+    
+    @PutMapping("/update/{id}")
+    public ResponseEntity<CashFlowDTO> updateRecord(
+            @PathVariable("id") Long id,
+            @RequestBody CashFlowDTO dto) {
+        return ResponseEntity.ok(cashFlowService.updateRecord(id, dto));
+    }
 }

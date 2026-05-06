@@ -58,4 +58,22 @@ public class CashFlowService {
     public void deleteRecord(Long id) {
         cashFlowRepository.deleteById(id);
     }
+    public CashFlowDTO updateRecord(Long id, CashFlowDTO dto) {
+        CashFlow existing = cashFlowRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("找不到收支記錄，ID: " + id));
+
+        existing.setType(dto.type());
+        existing.setCategory(dto.category());
+        existing.setAmount(dto.amount());
+        existing.setDescription(dto.description());
+        existing.setRecordDate(dto.recordDate());
+
+        CashFlow saved = cashFlowRepository.save(existing);
+
+        return new CashFlowDTO(
+            saved.getId(), saved.getUserId(), saved.getType(),
+            saved.getCategory(), saved.getAmount(),
+            saved.getDescription(), saved.getRecordDate()
+        );
+    }
 }
