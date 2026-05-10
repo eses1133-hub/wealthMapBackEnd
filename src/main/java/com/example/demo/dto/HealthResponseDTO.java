@@ -11,7 +11,6 @@ public class HealthResponseDTO {
 	private double L; // L
 	private double DTI; // DTI
 	private double S; // S
-	private double G; // G
 	private double score; // 總分
 	private boolean hasAsset;
 	private boolean hasLiability;
@@ -22,11 +21,10 @@ public class HealthResponseDTO {
 	private Map<String, Double> liabilityDistribution;
 	
 
-	public HealthResponseDTO(double L, double DTI, double S, double G, double score, boolean hasAsset, boolean hasLiability,double totalAssets,double totalLiabilities) {
+	public HealthResponseDTO(double L, double DTI, double S, double score, boolean hasAsset, boolean hasLiability,double totalAssets,double totalLiabilities) {
 		this.L = L;
 		this.DTI = DTI;
 		this.S = S;
-		this.G = G;
 		this.score = score;
 		this.hasAsset = hasAsset;
 		this.hasLiability = hasLiability;

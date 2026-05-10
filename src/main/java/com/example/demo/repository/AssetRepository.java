@@ -37,4 +37,7 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     //這是用來計算計使用者的資產總和的 (用在首頁折線圖
     @Query("SELECT SUM(a.amount) FROM Asset a WHERE a.user.id = :userId")
     Double sumAmountByUserId(@Param("userId")Long userId);
+    
+    
+  
 }
