@@ -3,10 +3,14 @@ package com.example.demo.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.example.demo.entity.Asset;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -37,4 +41,17 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     //這是用來計算計使用者的資產總和的 (用在首頁折線圖
     @Query("SELECT SUM(a.amount) FROM Asset a WHERE a.user.id = :userId")
     Double sumAmountByUserId(@Param("userId")Long userId);
+    
+    
+    // 更新資產中的股票成本價為現價 set amount	
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE assets a " +
+                   "JOIN stock_price sp ON a.symbol = sp.symbol " +
+                   "SET a.amount = sp.close_price * a.shares " +
+                   "WHERE a.type = 'STOCK' " +
+                   "AND a.shares is not null " +
+                   "AND sp.date = (SELECT MAX(date) FROM stock_price WHERE symbol = a.symbol)", 
+           nativeQuery = true)
+    void updateStockAssetsAmount();
 }

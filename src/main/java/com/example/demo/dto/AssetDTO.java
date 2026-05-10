@@ -7,6 +7,6 @@ public record AssetDTO(
 	    Double amount,       // 現金類的總金額
 	    String stockId,      // 股票代號
 	    Double sharesOwned,  // 持有股數
-	    Double totalCost     // 總成本) {
+	    Double cost     	 // 單位成本) {
 
 		) {}

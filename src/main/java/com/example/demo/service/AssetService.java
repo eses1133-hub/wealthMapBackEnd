@@ -107,8 +107,8 @@ public class AssetService {
         existingAsset.setAmount(assetDTO.amount());
 
         // 防呆機制：如果是股票，順便把總成本也更新一下 (如果你們有用到這個欄位的話)
-        if (assetDTO.totalCost() != null) {
-            existingAsset.setTotalCost(assetDTO.totalCost());
+        if (assetDTO.cost() != null) {
+            existingAsset.setCost(assetDTO.cost());
         }
 
         // 第三步：存回資料庫，Spring Data JPA 看到 ID 存在，就會自動幫你執行 UPDATE 語法
