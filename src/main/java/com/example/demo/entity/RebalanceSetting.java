@@ -40,6 +40,6 @@ public class RebalanceSetting {
     public int getCurrentShares() { return currentShares; }
     public void setCurrentShares(int currentShares) { this.currentShares = currentShares; }
 
-    public boolean isIsActive() { return isActive; }
+    public boolean isActive() { return isActive; }
     public void setIsActive(boolean isActive) { this.isActive = isActive; }
 }
