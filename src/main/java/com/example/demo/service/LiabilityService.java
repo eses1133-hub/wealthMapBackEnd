@@ -26,4 +26,14 @@ public class LiabilityService {
     public void deleteLiability(Long id) {
         liabilityRepo.deleteById(id);
     }
+    
+    // 修改負債資料 
+    public Liability updateLiability(Long id, Liability dto) {
+        Liability existing = liabilityRepo.findById(id)
+            .orElseThrow(() -> new RuntimeException("找不到負債，ID: " + id));
+        existing.setName(dto.getName());
+        existing.setCategory(dto.getCategory());
+        existing.setAmount(dto.getAmount());
+        return liabilityRepo.save(existing);
+    }
 }

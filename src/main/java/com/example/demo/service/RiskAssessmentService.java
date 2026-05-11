@@ -145,18 +145,23 @@ public class RiskAssessmentService {
         );
 	}
     
-   
-
-//	  delete by carly	    
-//    private RiskLevel determineLevel(int score) {
-////        if (score <= 10) return RiskLevel.CONSERVATIVE;
-////        if (score <= 15) return RiskLevel.DEFENSIVE;
-////        if (score <= 20) return RiskLevel.BALANCED;
-////        if (score <= 25) return RiskLevel.GROWTH;
-////        return RiskLevel.AGGRESSIVE;
-//        //according to Fidelity by carly
-//        if (score <= 15) return RiskLevel.CONSERVATIVE;
-//        if (score <= 30) return RiskLevel.DEFENSIVE;
-//        return RiskLevel.GROWTH;
-//    }
+   /*
+    *  依據userID 找尋最新的風險評估分數
+   */
+	public StrategyResponse getRiskResult(Long userId, String currentRiskLevel) {
+	    return riskAssessmentRepository.findFirstByUserIdAndRiskLevelOrderByCreatedAtDesc(userId, currentRiskLevel)
+	        .map(assessment -> {
+	            // 將 String 轉回 Enum 取得配置圖資訊
+	            RiskLevel level = RiskLevel.valueOf(assessment.getRiskLevel());
+	            
+	            return new StrategyResponse(
+	                level,
+	                level.getAllocationMap(),
+	                "根據您最新的評估紀錄 (" + assessment.getTotalScore() + "分)，" + level.getAdvice(),
+	                false
+	            );
+	        })
+	        .orElseThrow(() -> new RuntimeException("找不到吻合的測驗紀錄"));
+	}
+    
 }

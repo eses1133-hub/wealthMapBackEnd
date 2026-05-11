@@ -234,7 +234,7 @@ public class StockService {
      */
     private StrategyDTO updateStockBias(String symbol) {
         // 呼叫 StrategyService 計算當前乖離率 (門檻給 0 因為只是要拿數值)
-        StrategyDTO result = strategyService.calculateMa20Strategy(symbol, 0.0, 0.0);
+        StrategyDTO result = strategyService.calculateMa20Strategy(symbol);
         
         if (result != null) {
         	// 找出資料庫中最近的一筆紀錄
@@ -408,60 +408,7 @@ public class StockService {
         }
     	
     }
-	
-	/**
-     * 針對特定股票，檢查所有使用者的設定
-     */
-    public void checkAndNotifyStrategy_old(String symbol) {
-        // 1. 找出所有訂閱這支股票且啟用的設定
-        List<StrategySetting> activeSettings = strategySettingRepository.findBySymbolAndIsActiveTrue(symbol);
-        
-        if (activeSettings.isEmpty()) {
-            log.info(">>> 股票 {} 目前沒有啟用的使用者設定，跳過檢查。", symbol);
-            return;
-        }
 
-        for (StrategySetting setting : activeSettings) {
-            try {
-                // 2. 呼叫策略 Service 計算當前乖離率
-                StrategyDTO result = strategyService.calculateMa20Strategy(symbol, setting.getBuyThreshold(), setting.getSellThreshold());
-
-                // 3. 如果達到門檻且需要觸發
-                if (result != null && result.isShouldNotify()) {
-                	// 3. 檢查今天發過沒
-                    boolean alreadyNotified = alertLogRepository.existsByUserIdAndTargetIdAndCategoryAndAlertTimeAfter(
-                        setting.getUser().getId(), symbol, AlertLog.AlertCategory.STOCK_STRATEGY, 
-                        LocalDate.now().atStartOfDay());
-                    if (!alreadyNotified) {
-                        // 4. 【預約提醒】先存入 Log 並標記為 PENDING
-                        AlertLog pendingLog = new AlertLog();
-                        pendingLog.setUser(setting.getUser());
-                        pendingLog.setTargetId(symbol);
-                        pendingLog.setCategory(AlertLog.AlertCategory.STOCK_STRATEGY);
-                        pendingLog.setTitle("【WealthMap】" + symbol + " 策略觸發：" + result.getAction());
-//                        pendingLog.setContent("現價：" + result.getCurrentPrice() + "，建議：" + result.getAction());
-                        // 內容可以寫得更詳細一點，方便以後在 LOG 內查看
-                        pendingLog.setContent(String.format("現價：%.2f，MA20：%.2f，乖離率：%.2f%%，建議：%s", 
-                                              result.getCurrentPrice(), result.getMa20(), 
-                                              result.getBias() * 100, result.getAction()));
-                        pendingLog.setChannel(AlertLog.NotificationChannel.EMAIL);
-                        pendingLog.setStatus(AlertLog.AlertStatus.PENDING);
-                        pendingLog.setAlertTime(LocalDateTime.now());
-
-                        AlertLog savedLog = alertLogRepository.save(pendingLog);
-
-                        // 5. 【執行發送】
-                        emailService.sendStrategyEmail(setting.getUser().getEmail(), savedLog);
-                    }
-                }
-            } catch (Exception e) {
-                log.error(">>> 處理使用者 {} 的股票 {} 策略時發生錯誤: {}", 
-                          setting.getUser().getId(), symbol, e.getMessage());
-            }
-        }
-    }
-
-    
 	/**
 	 * 排程觸發點 設定：每週一至週五，下午 14:30 執行 (台股收盤後且資料更新後) 指定時區：Asia/Taipei 確保在雲端環境也能準時執行
 	 */
@@ -469,6 +416,8 @@ public class StockService {
 	public void scheduledTask() {
 		log.info("=== 定時排程啟動 ===");
 		executeFetch();
+		//更新資產的股票總額=現價*股數(Shares)
+		assetRepository.updateStockAssetsAmount();
 	}
 	
 	/**
@@ -491,7 +440,7 @@ public class StockService {
 	        this.fetchAndSaveBySymbol(symbol); 
 
 	        // 3. 抓完存好後，現在資料庫有資料了，再叫 Service 算一次
-	        return strategyService.calculateMa20Strategy(symbol, 0.0, 0.0);
+	        return strategyService.calculateMa20Strategy(symbol);
 
 	    } catch (Exception e) {
 	        log.error("快速取得報價失敗 ({}): {}", symbol, e.getMessage());

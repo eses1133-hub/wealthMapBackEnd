@@ -9,6 +9,12 @@ import com.example.demo.entity.TaiwanStockList;
 import com.example.demo.entity.User;
 import com.example.demo.repository.TaiwanStockListRepository;
 import com.example.demo.service.AssetService;
+import com.example.demo.service.StockService; 
+import com.example.demo.dto.StrategyDTO;
+import com.example.demo.dto.AssetDTO; 
+import com.example.demo.dto.ApiResponseDTO;
+import com.example.demo.dto.TwStockListDTO;
+import com.example.demo.service.StockReferenceService;
 import com.example.demo.vo.AppResponse;
 import com.example.demo.vo.RspCode;
 
@@ -19,37 +25,86 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/assets") 
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true") // 💡 跨域防護罩開啟
+@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true") 
 public class AssetController {
 
     @Autowired
     private AssetService assetService;
 
+    @Autowired
+    private StockReferenceService stockRefService;
+    
+    @Autowired
+    private StockService stockService;
+    
+    
+    
+    
 	@Autowired
     private TaiwanStockListRepository stockListRepository;
     // ---------------------------------------------------------
     // 1. 新增一筆資產 (前端 POST)
-    // ---------------------------------------------------------
     @PostMapping("/{userId}")
-    public ResponseEntity<Asset> createAsset(@PathVariable("userId") Long userId, @RequestBody Asset asset) {
+    public ResponseEntity<AssetDTO> createAsset(@PathVariable("userId") Long userId, @RequestBody AssetDTO assetDTO) {
+        
+        Asset asset = new Asset();
+        asset.setName(assetDTO.name()); 
+        asset.setType(assetDTO.type());
+        
+        // 🌟 破案關鍵：處理 amount 為 null 的防呆機制
+        Double finalAmount = assetDTO.amount();
+        if (finalAmount == null) {
+            finalAmount = assetDTO.cost();
+        }
+        asset.setAmount(finalAmount); 
+        
+        asset.setSymbol(assetDTO.stockId());
+        asset.setShares(assetDTO.sharesOwned());
+        asset.setCost(assetDTO.cost());
+
         User user = new User();
         user.setId(userId);
         asset.setUser(user);
 
+        // 存入資料庫
         Asset savedAsset = assetService.createAsset(asset);
-        return ResponseEntity.ok(savedAsset);
+        // 將 Entity 轉回 DTO
+        AssetDTO savedDTO = new AssetDTO(
+            savedAsset.getId(),
+            savedAsset.getName(),
+            savedAsset.getType(),
+            savedAsset.getAmount(),
+            savedAsset.getSymbol(),
+            savedAsset.getShares(),
+            savedAsset.getCost()
+        );
+
+        return ResponseEntity.ok(savedDTO);
     }
 
-    // ---------------------------------------------------------
-    // 2. 獲取某個使用者的所有資產 (前端 GET 畫圓餅圖)
-    // ---------------------------------------------------------
+    // 獲取某個使用者的所有資產
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Asset>> getAssetsByUserId(@PathVariable("userId") Long userId) {
+    public ResponseEntity<List<AssetDTO>> getAssetsByUserId(@PathVariable("userId") Long userId) {
+        
         List<Asset> assets = assetService.getAssetsByUserId(userId);
-        return ResponseEntity.ok(assets);
+        
+        // 將 List<Asset> 轉為 List<AssetDTO>
+        List<AssetDTO> assetDTOs = assets.stream()
+            .map(asset -> new AssetDTO(
+                asset.getId(),
+                asset.getName(),
+                asset.getType(),
+                asset.getAmount(),
+                asset.getSymbol(), 
+                asset.getShares(),asset.getCost()
+            ))
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(assetDTOs);
     }
     
     // ---------------------------------------------------------
@@ -61,14 +116,40 @@ public class AssetController {
         return ResponseEntity.ok().build(); 
     }
     
+    // 4. 修改資產 (前端 PUT)
+    @PutMapping("/{id}")
+    public ResponseEntity<AssetDTO> updateAsset(@PathVariable("id") Long id, @RequestBody AssetDTO assetDTO) {
+        
+        // 呼叫 Service 執行更新 (這就是我們剛剛在 AssetService 準備好的引擎)
+        Asset updatedAsset = assetService.updateAsset(id, assetDTO);
+
+        // 將更新後的 Entity 轉回 DTO 傳給前端
+        AssetDTO updatedDTO = new AssetDTO(
+            updatedAsset.getId(),
+            updatedAsset.getName(),
+            updatedAsset.getType(),
+            updatedAsset.getAmount(),
+            updatedAsset.getSymbol(),
+            updatedAsset.getShares(),
+            updatedAsset.getCost()
+        );
+
+        return ResponseEntity.ok(updatedDTO);
+    }
 
     // ---------------------------------------------------------
     // 4. 輸入股票代碼帶出代碼名稱 by carly
     // ---------------------------------------------------------
-	@GetMapping("/search-stock/{stock_id}")
+    @GetMapping("/search-stock/{stock_id}")
 	public AppResponse<TaiwanStockList> searchStock(@PathVariable("stock_id") String stock_id) {
 		return stockListRepository.findById(stock_id)
 	            .map(stock -> AppResponse.success(stock))
 	            .orElseGet(() -> AppResponse.error(RspCode.NOT_FOUND)); 
 	}
+    
+//    @GetMapping("/sync-stocks-now")
+//    public ResponseEntity<String> syncTaiwanStocksManually() {
+//        stockService.fetchTWStockApi(); 
+//        return ResponseEntity.ok("✅ 手動觸發台股清單同步成功！請查看後端 Console 確認進度。");
+//    }
 }
