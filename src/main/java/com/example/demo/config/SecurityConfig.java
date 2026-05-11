@@ -120,6 +120,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**","/api/monte/**").permitAll()
                 .requestMatchers("/send-email").permitAll()
                 .requestMatchers("/api/asset-history/**").permitAll()
+                .requestMatchers("/api/liabilities/**").permitAll()
 
 
                 .anyRequest().authenticated()

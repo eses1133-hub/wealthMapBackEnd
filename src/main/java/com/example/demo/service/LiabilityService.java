@@ -34,6 +34,7 @@ public class LiabilityService {
         existing.setName(dto.getName());
         existing.setCategory(dto.getCategory());
         existing.setAmount(dto.getAmount());
+        existing.setMonthlyPayment(dto.getMonthlyPayment());
         return liabilityRepo.save(existing);
     }
 }
