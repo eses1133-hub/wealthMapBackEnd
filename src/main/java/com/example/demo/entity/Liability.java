@@ -1,10 +1,20 @@
 package com.example.demo.entity;
 
-import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 @Entity
 @Table(name = "liabilities")
+@Data
 public class Liability {
 
     @Id
@@ -19,7 +29,10 @@ public class Liability {
 
     @Column(nullable = false)
     private Double amount;    // 負債金額
-
+    
+    @Column(nullable = true)
+    private Double monthlyPayment;
+ 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore //一開始就把防護罩加上，杜絕無限迴圈！
@@ -36,4 +49,5 @@ public class Liability {
     public void setAmount(Double amount) { this.amount = amount; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
-}
+
+	}

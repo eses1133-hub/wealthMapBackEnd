@@ -1,21 +1,39 @@
 package com.example.demo.dto;
 
+import java.util.List;
+import java.util.Map;
+
 import lombok.Data;
 
 @Data
 public class HealthResponseDTO {
 
-	private double L; // 流動性
-	private double DTI; // 負債比
-	private double S; // 儲蓄率
-	private double G; // 目標達成率
+	private double L; // L
+	private double DTI; // DTI
+	private double S; // S
+	private double G; // G
+	private double score; // 總分
+	private boolean hasAsset;
+	private boolean hasLiability;
+	private double totalAssets;
+	private double totalLiabilities;
+	private List<String> advice;
+	private Map<String, Double> assetDistribution;
+	private Map<String, Double> liabilityDistribution;
+	
 
-	private int score; // 總分
+	public HealthResponseDTO(double L, double DTI, double S, double G, double score, boolean hasAsset, boolean hasLiability,double totalAssets,double totalLiabilities) {
+		this.L = L;
+		this.DTI = DTI;
+		this.S = S;
+		this.G = G;
+		this.score = score;
+		this.hasAsset = hasAsset;
+		this.hasLiability = hasLiability;
+		this.totalAssets = totalAssets;
+		this.totalLiabilities = totalLiabilities;
+	}
 
 
-	private String debtStatus; //負債比建議
-	private String investStatus; //投資建議
-	private String liquidStatus; //流動性建議
-	private String savingStatus; //儲蓄率建議
 
 }

@@ -1,31 +1,30 @@
-package com.example.demo.controller;
+package com.example.demo.controller; // 修正 package 路徑
 
-import com.example.demo.dto.Asset;
-import com.example.demo.service.RebalanceService;
+import com.example.demo.entity.RebalanceSetting; // 修正 import
+import com.example.demo.repository.RebalanceRepository; // 修正 import
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping("/api")
-@CrossOrigin(origins = "*") // 允許前端存取
+@RequestMapping("/api/rebalance")
 public class RebalanceController {
 
     @Autowired
-    private RebalanceService rebalanceService;
+    private RebalanceRepository rebalanceRepository;
 
-    // 新增：供前端搜尋股票名稱的 API
-    @GetMapping("/search")
-    public List<Map<String, String>> search(@RequestParam String q) {
-        return rebalanceService.searchStocks(q);
+    @GetMapping("/list/{userId}")
+    public List<RebalanceSetting> getList(@PathVariable("userId") Long userId) {
+        return rebalanceRepository.findByUserIdAndIsActiveTrue(userId);
     }
 
-    // 原有：執行再平衡試算的 API
-    @PostMapping("/calculate")
-    public List<Asset> calculate(@RequestBody Map<String, Object> payload) {
-        List<Asset> portfolio = (List<Asset>) payload.get("portfolio");
-        double targetTotalValue = Double.parseDouble(payload.get("targetTotalValue").toString());
-        return rebalanceService.calculate(portfolio, targetTotalValue);
+    @PostMapping("/save")
+    public RebalanceSetting save(@RequestBody RebalanceSetting setting) {
+        return rebalanceRepository.save(setting);
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public void delete(@PathVariable("id") Long id) {
+        rebalanceRepository.deleteById(id);
     }
 }

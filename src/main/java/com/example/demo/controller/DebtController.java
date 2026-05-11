@@ -22,7 +22,7 @@ public class DebtController {
 	@GetMapping("/test/saveDebt")
 	public String testsaveDebt() {
 		Debt debt = new Debt();
-		debt.setUserId(2L);
+		debt.setId(2L);	
 		debt.setDebtName("星展");	
 		debt.setType("creditcard");
 		debt.setTotalAmount(120000.0);
