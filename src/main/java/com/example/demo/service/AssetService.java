@@ -50,14 +50,12 @@ public class AssetService {
         existingAsset.setName(assetDTO.name());
         existingAsset.setType(assetDTO.type());
 
-        // ✅ 防呆：amount 為 null 時用 totalCost 頂替
         Double finalAmount = assetDTO.amount();
         if (finalAmount == null) {
             finalAmount = assetDTO.totalCost();
         }
         existingAsset.setAmount(finalAmount);
 
-        // ✅ 股票/基金相關欄位
         if (assetDTO.stockId() != null) {
             existingAsset.setSymbol(assetDTO.stockId());
         }
@@ -69,11 +67,13 @@ public class AssetService {
         }
 
         return assetRepository.save(existingAsset);
+    }  
+
     
-    // 以下是用在首頁折線圖的相關方法
+    // 首頁折線圖
     @Autowired
     private AssetHistoryRepository historyRepository;
-    // 4. 更新當日資產總額
+    //  更新當日資產總額
     @Transactional
     public synchronized void syncHistory(Long userId) {
         // 使用 Optional 處理 null，避免 Lambda 報錯 (effectively final 問題)
