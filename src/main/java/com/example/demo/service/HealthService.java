@@ -38,15 +38,11 @@ public class HealthService {
 
 		boolean hasLiability = !liabilities.isEmpty();
 		if (!hasAsset && !hasLiability) {
-			return new HealthResponseDTO(
-					0, // L
+			return new HealthResponseDTO(0, // L
 					0, // DTI
 					0, // S
 					0, // score
-					false, 
-					false, 
-					0, 
-					0);
+					false, false, 0, 0);
 		}
 
 		// ===== 資產 =====
@@ -61,30 +57,19 @@ public class HealthService {
 		// ===== 現金（流動資產）=====
 		double cash = assets.stream().mapToDouble(d -> Optional.ofNullable(d.getAmount()).orElse(0.0)).sum();
 
-		// ===== 每月支出（用負債月付當基礎）=====
-		double expense = liabilities.stream().mapToDouble(d -> Optional.ofNullable(d.getAmount()).orElse(0.0))
-				.sum();
+		// ===== 每月支出 =====
+		double expense = assets.stream().filter(a -> "EXPENSE".equals(a.getType()))
+				.mapToDouble(a -> Optional.ofNullable(a.getAmount()).orElse(0.0)).sum();
 
-		if (expense == 0) {
-			expense = totalLiabilities * 0.40; // 🔥 假設支出 = 資產40%
-		}
-
-		// ===== 收入（暫時假設）=====
-		double income = estimateIncome(assets, liabilities); // 可替換成 UserProfile
-
-		if (income == 0) {
-			income = expense * 2; // 🔥 假設收入 = 支出2倍
-		}
-
-		double monthlyDebt = liabilities.stream()
-				.mapToDouble(d -> Optional.ofNullable(d.getMonthlyPayment()).orElse(0.0)).sum();
+		double income = assets.stream().filter(a -> "INCOME".equals(a.getType()))
+				.mapToDouble(a -> Optional.ofNullable(a.getAmount()).orElse(0.0)).sum();
 
 		// ===== 財務指標 =====
-		double L = expense > 0 ? cash / expense : 0;
+		double L = expense > 0 ? Math.min(netWorth / expense, 6) : 0;
 
-		double DTI = totalLiabilities > 0 ? ((totalLiabilities / 12) / (totalAssets / 12)) * 100 : 0;
+		double DTI = totalLiabilities > 0 ? Math.min(((totalLiabilities / 36) / income) * 100, 100) : 0;
 
-		double S = expense > 0 ? (totalAssets / expense) * 100 : 0;
+		double S = expense > 0 ? ((income - expense) / income) * 100 : 0;
 
 		// ===== 分數 =====
 		double score = Math.min(calculateScore(L, DTI, S), 100);
@@ -109,68 +94,64 @@ public class HealthService {
 		dto.setAssetDistribution(assetDistribution);
 		dto.setLiabilityDistribution(liabilityDistribution);
 		dto.setAdvice(advice);
-		System.out.println(L);
-		System.out.println(DTI);
-		System.out.println(S);
-		System.out.println(score);
+//		System.out.println("緊急預備金=" + L);
+//		System.out.println("負債比=" + DTI);
+//		System.out.println("儲蓄率=" + S);
+//		System.out.println("分數=" + score);
+//		System.out.println("收入=" + income);
+//		System.out.println("支出=" + expense);
 		return dto;
 	}
 
 	public List<AssetGrowthDTO> getAssetGrowth(Long userId) {
 
-	    List<Object[]> rawData =
-	            assetRecordRepository.getMonthlyAssets(userId);
+		List<Object[]> rawData = assetRecordRepository.getMonthlyAssets(userId);
 
-	    List<AssetGrowthDTO> result = new ArrayList<>();
+		List<AssetGrowthDTO> result = new ArrayList<>();
 
-	    double previous = 0;
+		double previous = 0;
 
-	    for (Object[] row : rawData) {
+		for (Object[] row : rawData) {
 
-	        String month = (String) row[0];
+			String month = (String) row[0];
 
-	        double total =
-	                ((Number) row[1]).doubleValue();
+			double total = ((Number) row[1]).doubleValue();
 
-	        double growth = 0;
+			double growth = 0;
 
-	        if(previous > 0){
+			if (previous > 0) {
 
-	            growth =
-	                ((total - previous) / previous) * 100;
+				growth = ((total - previous) / previous) * 100;
 
-	        }
+			}
 
-	        result.add(
-	            new AssetGrowthDTO(
-	                month,
-	                Math.round(growth * 10.0) / 10.0
-	            )
-	        );
+			result.add(new AssetGrowthDTO(month, Math.round(growth * 10.0) / 10.0));
 
-	        previous = total;
-	    }
+			previous = total;
+		}
 
-	    return result;
-	}
-	
-	
-	private double estimateIncome(List<Asset> assets, List<Liability> liabilities) {
-		// 👉 暫時假設：收入 = 月負債 * 2（你可以改成從 User 表抓）
-		double monthlyDebt = liabilities.stream()
-				.mapToDouble(d -> Optional.ofNullable(d.getMonthlyPayment()).orElse(0.0)).sum();
-
-		return monthlyDebt * 2;
+		return result;
 	}
 
 	private double calculateScore(double L, double DTI, double S) {
 
 		// 👉 簡單權重（可調整🔥）
 		double lScore = Math.min(L, 6) * 10; // 上限60
-		double dtiScore = Math.max(0, 100 - DTI); // 越低越好
+//		double dtiScore = Math.max(0, 100 - DTI); // 越低越好
+		double dtiScore;
+
+		if (DTI <= 20) {
+			dtiScore = 100;
+		} else if (DTI <= 40) {
+			dtiScore = 80;
+		} else if (DTI <= 60) {
+			dtiScore = 50;
+		} else {
+			dtiScore = 20;
+		}
 		double sScore = Math.max(0, S); // 越高越好
 
-		return (lScore * 0.3) + (dtiScore * 0.4) + (sScore * 0.3);
+		return (lScore * 0.35) + (dtiScore * 0.3) + (sScore * 0.35);
 	}
 
 	private String calculateLevel(double score) {
