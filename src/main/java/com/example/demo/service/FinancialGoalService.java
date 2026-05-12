@@ -27,4 +27,15 @@ public class FinancialGoalService {
     public void deleteGoal(Long id) {
         goalRepository.deleteById(id);
     }
+    
+    public FinancialGoal updateGoal(Long id, FinancialGoal dto) {
+        FinancialGoal existing = goalRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("找不到目標，ID: " + id));
+        existing.setGoalName(dto.getGoalName());
+        existing.setTargetAmount(dto.getTargetAmount());
+        existing.setTargetDate(dto.getTargetDate());
+        existing.setAssetId(dto.getAssetId()); // 更新綁定資產
+        return goalRepository.save(existing);
+    }
+    
 }

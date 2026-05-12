@@ -40,8 +40,8 @@ public class Asset {
     private Double shares;
 
     // 總成本 (現金類資產此欄位為 null)
-    @Column(name = "cost")
-    private Double cost;
+	@Column(name = "cost")
+	private Double cost;
 
 	//記錄這筆資產建立的時間
 	@Column(name = "created_at", nullable = false)
@@ -59,6 +59,11 @@ public class Asset {
 	public void prePersist() {
 		this.createdAt = LocalDateTime.now();
 	}
-
+	public Double getCost() {
+	    return cost;
+	}
+	public void setCost(Double cost) {
+	    this.cost = cost;
+    }
 }
 

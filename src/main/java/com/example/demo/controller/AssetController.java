@@ -55,9 +55,11 @@ public class AssetController {
         asset.setName(assetDTO.name()); 
         asset.setType(assetDTO.type());
         
-        // 🌟 破案關鍵：處理 amount 為 null 的防呆機制
+        // 處理 amount 為 null 的防呆機制
         Double finalAmount = assetDTO.amount();
         if (finalAmount == null) {
+            // 如果前端沒傳 amount（例如股票模式下只算 totalCost），
+            // 我們就自動拿 totalCost 來頂替，避免資料庫生氣報錯！
             finalAmount = assetDTO.cost();
         }
         asset.setAmount(finalAmount); 

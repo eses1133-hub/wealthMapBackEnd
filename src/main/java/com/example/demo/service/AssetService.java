@@ -43,11 +43,39 @@ public class AssetService {
         assetRepository.deleteById(id);
     }
 
-    // 以下是用在首頁折線圖的相關方法
+    
+    //  4. 修改資產資料
+    public Asset updateAsset(Long id, AssetDTO assetDTO) {
+        Asset existingAsset = assetRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("找不到這筆資產，ID: " + id));
+
+        existingAsset.setName(assetDTO.name());
+        existingAsset.setType(assetDTO.type());
+
+        Double finalAmount = assetDTO.amount();
+        if (finalAmount == null) {
+            finalAmount = assetDTO.cost();
+        }
+        existingAsset.setAmount(finalAmount);
+
+        if (assetDTO.stockId() != null) {
+            existingAsset.setSymbol(assetDTO.stockId());
+        }
+        if (assetDTO.sharesOwned() != null) {
+            existingAsset.setShares(assetDTO.sharesOwned());
+        }
+        if (assetDTO.cost() != null) {
+            existingAsset.setCost(assetDTO.cost());
+        }
+
+        return assetRepository.save(existingAsset);
+    }  
+
+    
+    // 首頁折線圖
     @Autowired
     private AssetHistoryRepository historyRepository;
-
-    // 4. 更新當日資產總額
+    //  更新當日資產總額
     @Transactional
     public synchronized void syncHistory(Long userId) {
         // 使用 Optional 處理 null，避免 Lambda 報錯 (effectively final 問題)
@@ -95,23 +123,4 @@ public class AssetService {
     // --- 5. 供前端折線圖使用的-取得歷史紀錄的方法
     public List<AssetHistory> getAssetTrend(Long userId) {
         return historyRepository.findByUserIdOrderByRecordDateAsc(userId);
-    }    
- // 🌟 4. 修改資產資料 (新增這段)
-    public Asset updateAsset(Long id, AssetDTO assetDTO) {
-        // 第一步：先用 ID 把資料庫裡的「舊資產」撈出來。如果找不到就拋出錯誤。
-        Asset existingAsset = assetRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("找不到這筆資產，ID: " + id));
-
-        // 第二步：把使用者傳來的新名字和新金額，更新到舊資產上
-        existingAsset.setName(assetDTO.name());
-        existingAsset.setAmount(assetDTO.amount());
-
-        // 防呆機制：如果是股票，順便把總成本也更新一下 (如果你們有用到這個欄位的話)
-        if (assetDTO.cost() != null) {
-            existingAsset.setCost(assetDTO.cost());
         }
-
-        // 第三步：存回資料庫，Spring Data JPA 看到 ID 存在，就會自動幫你執行 UPDATE 語法
-        return assetRepository.save(existingAsset);
-    }
-}
