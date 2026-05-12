@@ -124,3 +124,4 @@ public class AssetService {
     public List<AssetHistory> getAssetTrend(Long userId) {
         return historyRepository.findByUserIdOrderByRecordDateAsc(userId);
         }
+}
