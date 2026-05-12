@@ -52,7 +52,7 @@ public class AssetService {
 
         Double finalAmount = assetDTO.amount();
         if (finalAmount == null) {
-            finalAmount = assetDTO.totalCost();
+            finalAmount = assetDTO.cost();
         }
         existingAsset.setAmount(finalAmount);
 
@@ -62,8 +62,8 @@ public class AssetService {
         if (assetDTO.sharesOwned() != null) {
             existingAsset.setShares(assetDTO.sharesOwned());
         }
-        if (assetDTO.totalCost() != null) {
-            existingAsset.setTotalCost(assetDTO.totalCost());
+        if (assetDTO.cost() != null) {
+            existingAsset.setCost(assetDTO.cost());
         }
 
         return assetRepository.save(existingAsset);

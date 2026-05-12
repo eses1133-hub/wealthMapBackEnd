@@ -55,18 +55,18 @@ public class AssetController {
         asset.setName(assetDTO.name()); 
         asset.setType(assetDTO.type());
         
-        // 🌟 破案關鍵：處理 amount 為 null 的防呆機制
+        // 處理 amount 為 null 的防呆機制
         Double finalAmount = assetDTO.amount();
         if (finalAmount == null) {
             // 如果前端沒傳 amount（例如股票模式下只算 totalCost），
             // 我們就自動拿 totalCost 來頂替，避免資料庫生氣報錯！
-            finalAmount = assetDTO.totalCost();
+            finalAmount = assetDTO.cost();
         }
         asset.setAmount(finalAmount); 
         
         asset.setSymbol(assetDTO.stockId());
         asset.setShares(assetDTO.sharesOwned());
-        asset.setTotalCost(assetDTO.totalCost());
+        asset.setCost(assetDTO.cost());
 
         User user = new User();
         user.setId(userId);
@@ -82,7 +82,7 @@ public class AssetController {
             savedAsset.getAmount(),
             savedAsset.getSymbol(),
             savedAsset.getShares(),
-            savedAsset.getTotalCost()
+            savedAsset.getCost()
         );
 
         return ResponseEntity.ok(savedDTO);
@@ -102,7 +102,7 @@ public class AssetController {
                 asset.getType(),
                 asset.getAmount(),
                 asset.getSymbol(), 
-                asset.getShares(),asset.getTotalCost()
+                asset.getShares(),asset.getCost()
             ))
             .collect(Collectors.toList());
 
@@ -133,7 +133,7 @@ public class AssetController {
             updatedAsset.getAmount(),
             updatedAsset.getSymbol(),
             updatedAsset.getShares(),
-            updatedAsset.getTotalCost()
+            updatedAsset.getCost()
         );
 
         return ResponseEntity.ok(updatedDTO);
