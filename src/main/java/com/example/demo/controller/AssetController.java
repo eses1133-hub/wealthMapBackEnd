@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import com.example.demo.entity.Asset;
 import com.example.demo.entity.TaiwanStockList;
 import com.example.demo.entity.User;
+import com.example.demo.repository.AssetRepository;
 import com.example.demo.repository.TaiwanStockListRepository;
 import com.example.demo.service.AssetService;
 import com.example.demo.service.StockService; 
@@ -41,7 +42,8 @@ public class AssetController {
     @Autowired
     private StockService stockService;
     
-    
+    @Autowired
+    private AssetRepository assetRepository;
     
     
 	@Autowired
@@ -154,4 +156,15 @@ public class AssetController {
 //        stockService.fetchTWStockApi(); 
 //        return ResponseEntity.ok("✅ 手動觸發台股清單同步成功！請查看後端 Console 確認進度。");
 //    }
+    
+
+    // 在「新增彈跳視窗」中，讓使用者從他的持股中選擇 (資產再平衡使用)。
+    @GetMapping("/rebalance/available-stocks/{userId}")
+    public ResponseEntity<List<String>> getRebalanceAvailableStocks(@PathVariable("userId") Long userId) {
+        // 從 AssetRepository 撈出該用戶目前持有的所有 symbol
+    	List<String> symbols = assetRepository.findRebalanceAvailableSymbolsByUserId(userId);
+        return ResponseEntity.ok(symbols);
+    }
+    
+    
 }

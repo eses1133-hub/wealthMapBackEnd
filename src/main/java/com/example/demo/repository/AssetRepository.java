@@ -28,6 +28,7 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     @Query("SELECT a.symbol FROM Asset a WHERE a.user.id = :userId ")
     List<String> findSymbolsByUserId(@Param("userId") Long userId);
     
+    //加減碼策略，新增時的下拉選單。
     @Query("SELECT DISTINCT a.symbol FROM Asset a " +
     	       "WHERE a.user.id = :userId " +
     	       "AND a.type = 'STOCK' " +
@@ -54,4 +55,17 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
                    "AND sp.date = (SELECT MAX(date) FROM stock_price WHERE symbol = a.symbol)", 
            nativeQuery = true)
     void updateStockAssetsAmount();
+        
+    // 資產再平衡：新增時的下拉選單，排除已存在於 RebalanceSetting 的標的
+    @Query("SELECT DISTINCT a.symbol FROM Asset a " +
+           "WHERE a.user.id = :userId " +
+           "AND a.type = 'STOCK' " +
+           "AND a.symbol IS NOT NULL " +
+           "AND NOT EXISTS (" +
+           "    SELECT r FROM RebalanceSetting r " +
+           "    WHERE r.userId = :userId AND r.symbol = a.symbol" +
+           ")")
+    List<String> findRebalanceAvailableSymbolsByUserId(@Param("userId") Long userId);
+    
+    
 }
