@@ -60,9 +60,9 @@ public class User {
     @Column(name = "risk_level")
     private String riskLevel;
     
-    // 🌟 新增：記錄使用者的風險屬性
-//    @Column(name = "risk_level")
-//    private String riskLevel; 
+    
+    @Column(nullable = false)
+    private Boolean enabled = true; // 新增此欄位，用來控制帳號狀態
     
     //一個user可擁有很多資產，cascade = CascadeType.ALL=級聯操作
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

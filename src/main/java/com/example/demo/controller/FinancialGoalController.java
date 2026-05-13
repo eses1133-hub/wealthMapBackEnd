@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PutMapping;
 
 import com.example.demo.entity.FinancialGoal;
 import com.example.demo.entity.User;
@@ -47,4 +48,12 @@ public class FinancialGoalController {
         goalService.deleteGoal(id);
         return ResponseEntity.ok().build();
     }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<FinancialGoal> updateGoal(
+            @PathVariable("id") Long id,
+            @RequestBody FinancialGoal goal) {
+        return ResponseEntity.ok(goalService.updateGoal(id, goal));
+    }
+    
 }

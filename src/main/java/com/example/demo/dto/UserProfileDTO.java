@@ -25,6 +25,7 @@ public class UserProfileDTO {
     private String email;
     private String role;
     private String riskLevel;
+    private boolean enabled;
     
     private List<AssetDTO> assets;
     private List<InvestmentDTO> investments;

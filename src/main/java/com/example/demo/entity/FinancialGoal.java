@@ -13,7 +13,10 @@ public class FinancialGoal {
 
     @Column(name = "goal_name", nullable = false, length = 100)
     private String goalName;
-
+    
+    @Column(name = "asset_id")
+    private Long assetId;
+    
     @Column(name = "target_amount", nullable = false)
     private Double targetAmount;
 
@@ -73,5 +76,13 @@ public class FinancialGoal {
 
     public void setUser(User user) {
         this.user = user;
+    }
+    
+    public Long getAssetId() { 
+    	return assetId; 
+    }
+    
+    public void setAssetId(Long assetId) { 
+    	this.assetId = assetId; 
     }
 }

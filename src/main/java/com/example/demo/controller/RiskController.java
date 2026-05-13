@@ -226,5 +226,22 @@ public class RiskController {
         }
     }
     
+    /**
+     * 會員回顧模式：根據 UserId 與目前的 RiskLevel 抓取含有分數的歷史紀錄
+     */
+    @GetMapping("/last-riskresult")
+    public AppResponse<?> getRiskResultByRiskLevel( @RequestParam("user_id") Long userId, @RequestParam("level") String level) {
+        try {
+            // 呼叫 Service 進行比對查詢
+            StrategyResponse result = riskService.getRiskResult(userId, level);
+            return AppResponse.success(result);
+        } catch (RuntimeException e) {
+            // 找不到紀錄時的回傳
+            return AppResponse.error(RspCode.NOT_FOUND, e.getMessage());
+        } catch (Exception e) {
+            return AppResponse.error(RspCode.INTERNAL_SERVER_ERROR, "系統查詢失敗");
+        }
+    }
+    
     
 }

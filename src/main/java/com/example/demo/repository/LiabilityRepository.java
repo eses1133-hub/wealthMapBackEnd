@@ -8,4 +8,7 @@ import java.util.List;
 @Repository
 public interface LiabilityRepository extends JpaRepository<Liability, Long> {
     List<Liability> findByUser_Id(Long userId);
+    
+    // 根據繳款日與是否啟用提醒來搜尋
+    List<Liability> findByDueDayAndNotifyEnabled(Integer dueDay, Boolean notifyEnabled);
 }

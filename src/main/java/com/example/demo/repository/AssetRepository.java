@@ -3,10 +3,14 @@ package com.example.demo.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.example.demo.entity.Asset;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -24,7 +28,7 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     @Query("SELECT a.symbol FROM Asset a WHERE a.user.id = :userId ")
     List<String> findSymbolsByUserId(@Param("userId") Long userId);
     
-    @Query("SELECT a.symbol FROM Asset a " +
+    @Query("SELECT DISTINCT a.symbol FROM Asset a " +
     	       "WHERE a.user.id = :userId " +
     	       "AND a.type = 'STOCK' " +
     	       "AND a.symbol is not null " +
@@ -39,5 +43,15 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     Double sumAmountByUserId(@Param("userId")Long userId);
     
     
-  
+    // 更新資產中的股票成本價為現價 set amount	
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE assets a " +
+                   "JOIN stock_price sp ON a.symbol = sp.symbol " +
+                   "SET a.amount = sp.close_price * a.shares " +
+                   "WHERE a.type = 'STOCK' " +
+                   "AND a.shares is not null " +
+                   "AND sp.date = (SELECT MAX(date) FROM stock_price WHERE symbol = a.symbol)", 
+           nativeQuery = true)
+    void updateStockAssetsAmount();
 }

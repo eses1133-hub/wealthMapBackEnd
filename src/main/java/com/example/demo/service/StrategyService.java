@@ -22,7 +22,7 @@ public class StrategyService {
      * @param buyThreshold 使用者設定的加碼(買)門檻 (正數，如 5.0 代表 5%)
      * @param sellThreshold 使用者設定的減碼(賣)門檻 (正數，如 10.0 代表 10%)
      */
-	public StrategyDTO calculateMa20Strategy(String symbol, double buyThreshold, double sellThreshold) {
+	public StrategyDTO calculateMa20Strategy(String symbol) {
 		// 1. 從 DB 撈取最近 20 筆收盤價
 		List<StockPrice> history20 = stockPriceRepository.findTop20BySymbolOrderByDateDesc(symbol);
 
@@ -43,22 +43,22 @@ public class StrategyService {
 		double bias = (currentPrice - ma20) / ma20;
 
 		// 5. 判斷邏輯 (將輸入的 % 數轉為小數進行比對)
-		String action = "觀望";
+//		String action = "觀望";
 		boolean shouldNotify = false;
 
-		if (bias <= -(buyThreshold / 100)) {
-			action = "加碼";
-			shouldNotify = true;
-		} else if (bias >= (sellThreshold / 100)) {
-			action = "減碼";
-			shouldNotify = true;
-		}
+//		if (bias <= -(buyThreshold / 100)) {
+//			action = "加碼";
+//			shouldNotify = true;
+//		} else if (bias >= (sellThreshold / 100)) {
+//			action = "減碼";
+//			shouldNotify = true;
+//		}
 
 		return StrategyDTO.builder()
 				.symbol(symbol)
 				.currentPrice(currentPrice)
 				.ma20(ma20).bias(bias)
-				.action(action)
+				.action("未設定")
 				.shouldNotify(shouldNotify)
 				.date(date)
 				.build();
