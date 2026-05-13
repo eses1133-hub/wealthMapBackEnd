@@ -49,7 +49,7 @@ public class AssetService {
     @Transactional
     public synchronized void syncHistory(Long userId) {
         // 使用 Optional 處理 null，避免 Lambda 報錯 (effectively final 問題)
-        final Double currentTotal = Optional.ofNullable(assetRepository.sumAmountByUserId(userId)).orElse(0.0);
+        final Double currentTotal = Optional.ofNullable(assetRepository.sumPureAmountByUserId(userId)).orElse(0.0);
         LocalDate today = LocalDate.now();
 
      // 檢查是否已有任何歷史紀錄
