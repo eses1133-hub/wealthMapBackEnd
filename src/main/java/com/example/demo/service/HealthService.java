@@ -57,6 +57,9 @@ public class HealthService {
 		// ===== 現金（流動資產）=====
 		double cash = assets.stream().mapToDouble(d -> Optional.ofNullable(d.getAmount()).orElse(0.0)).sum();
 
+		double monthlyPayment = liabilities.stream()
+				.mapToDouble(d -> Optional.ofNullable(d.getMonthlyPayment()).orElse(0.0)).sum();
+		
 		// ===== 每月支出 =====
 		double expense = assets.stream().filter(a -> "EXPENSE".equals(a.getType()))
 				.mapToDouble(a -> Optional.ofNullable(a.getAmount()).orElse(0.0)).sum();
@@ -67,7 +70,7 @@ public class HealthService {
 		// ===== 財務指標 =====
 		double L = expense > 0 ? Math.min(netWorth / expense, 6) : 0;
 
-		double DTI = totalLiabilities > 0 ? Math.min(((totalLiabilities / 36) / income) * 100, 100) : 0;
+		double DTI = monthlyPayment > 0 ? Math.min((monthlyPayment / income) * 100, 100) : 0;
 
 		double S = expense > 0 ? ((income - expense) / income) * 100 : 0;
 
@@ -94,12 +97,13 @@ public class HealthService {
 		dto.setAssetDistribution(assetDistribution);
 		dto.setLiabilityDistribution(liabilityDistribution);
 		dto.setAdvice(advice);
-//		System.out.println("緊急預備金=" + L);
-//		System.out.println("負債比=" + DTI);
-//		System.out.println("儲蓄率=" + S);
-//		System.out.println("分數=" + score);
-//		System.out.println("收入=" + income);
-//		System.out.println("支出=" + expense);
+		System.out.println("緊急預備金=" + L);
+		System.out.println("負債比=" + DTI);
+		System.out.println("儲蓄率=" + S);
+		System.out.println("分數=" + score);
+		System.out.println("收入=" + income);
+		System.out.println("支出=" + expense);
+		System.out.println("月負債=" + monthlyPayment);
 		return dto;
 	}
 
