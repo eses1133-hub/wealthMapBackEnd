@@ -44,7 +44,7 @@ public class LiabilityService {
     public double calculateRemainingMonths(Liability liability) {
         // 安全檢查：避免除以 0 或空值
         if (liability.getMonthlyPayment() <= 0 || liability.getAmount() == null || liability.getAmount() <= 0) {
-            return 0;
+            return 1;
         }
 
         // 計算剩餘期數：總額 / 每月還款量 (使用 Math.ceil 無條件進位)
