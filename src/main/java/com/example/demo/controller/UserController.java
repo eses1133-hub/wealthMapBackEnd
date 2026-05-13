@@ -88,6 +88,8 @@ public class UserController {
                         adto.setSymbol(a.getSymbol());
                         adto.setType(a.getType()); 
                         adto.setAmount(a.getAmount());
+                        adto.setShares(a.getShares());
+                        adto.setCost(a.getCost());
                         return adto;
                     }).toList());
                     

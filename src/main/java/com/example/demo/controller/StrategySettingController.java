@@ -134,7 +134,7 @@ public class StrategySettingController {
 	     return AppResponse.success(null);
 	 }
     
-    // 在「新增彈跳視窗」中，讓使用者從他的持股中選擇。
+    // 在「新增彈跳視窗」中，讓使用者從他的持股中選擇 (加減碼策略使用)。
     @GetMapping("/user/available-stocks/{userId}")
     public ResponseEntity<List<String>> getAvailableStocks(@PathVariable("userId") Long userId) {
         // 從 AssetRepository 撈出該用戶目前持有的所有 symbol
