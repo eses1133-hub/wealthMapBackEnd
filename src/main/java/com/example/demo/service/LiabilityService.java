@@ -35,6 +35,19 @@ public class LiabilityService {
         existing.setCategory(dto.getCategory());
         existing.setAmount(dto.getAmount());
         existing.setMonthlyPayment(dto.getMonthlyPayment());
+        existing.setNotifyEnabled(dto.getNotifyEnabled());
+        existing.setDueDay(dto.getDueDay());
         return liabilityRepo.save(existing);
+    }
+    
+    // 計算貸款剩餘期數
+    public double calculateRemainingMonths(Liability liability) {
+        // 安全檢查：避免除以 0 或空值
+        if (liability.getMonthlyPayment() <= 0 || liability.getAmount() == null || liability.getAmount() <= 0) {
+            return 0;
+        }
+
+        // 計算剩餘期數：總額 / 每月還款量 (使用 Math.ceil 無條件進位)
+        return Math.ceil(liability.getAmount() / liability.getMonthlyPayment());
     }
 }

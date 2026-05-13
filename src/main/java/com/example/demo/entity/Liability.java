@@ -32,6 +32,14 @@ public class Liability {
     
     @Column(nullable = false)
     private double monthlyPayment;  // 月還款
+    
+	//每月繳款日
+	@Column(nullable = false)
+	private Integer dueDay;
+	
+	//是否啟用提醒
+	@Column(nullable = false, length = 100)
+	private Boolean notifyEnabled;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

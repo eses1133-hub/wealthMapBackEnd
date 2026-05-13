@@ -78,6 +78,7 @@ public class UserController {
                     dto.setEmail(user.getEmail());
                     dto.setRole(user.getRole());
                     dto.setRiskLevel(user.getRiskLevel());
+                    dto.setEnabled(user.getEnabled());
 
                     // 轉換資產 Assets
                     dto.setAssets(user.getAssets().stream().map(a -> {
