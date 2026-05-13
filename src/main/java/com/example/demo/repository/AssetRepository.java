@@ -38,11 +38,8 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     	       ")")
 	List<String> findAvailableSymbolsByUserId(@Param("userId") Long userId);
     
-    //這是用來計算計使用者的資產總和的 (用在首頁折線圖
-    @Query("SELECT SUM(a.amount) FROM Asset a WHERE a.user.id = :userId")
-    Double sumAmountByUserId(@Param("userId")Long userId);
-    
-    
+ 
+
     // 更新資產中的股票成本價為現價 set amount	
     @Modifying
     @Transactional
@@ -54,4 +51,13 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
                    "AND sp.date = (SELECT MAX(date) FROM stock_price WHERE symbol = a.symbol)", 
            nativeQuery = true)
     void updateStockAssetsAmount();
+
+       //這是用來計算計使用者的資產總和的 (用在首頁折線圖
+//    @Query("SELECT SUM(a.amount) FROM Asset a WHERE a.user.id = :userId")
+//    Double sumAmountByUserId(@Param("userId")Long userId);
+    @Query("SELECT SUM(a.amount) FROM Asset a " +
+            "WHERE a.user.id = :userId " +
+            "AND a.type NOT IN ('INCOME', 'EXPENSE')")
+     Double sumPureAmountByUserId(@Param("userId") Long userId);
+
 }
