@@ -28,7 +28,7 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     @Query("SELECT a.symbol FROM Asset a WHERE a.user.id = :userId ")
     List<String> findSymbolsByUserId(@Param("userId") Long userId);
     
-    @Query("SELECT a.symbol FROM Asset a " +
+    @Query("SELECT DISTINCT a.symbol FROM Asset a " +
     	       "WHERE a.user.id = :userId " +
     	       "AND a.type = 'STOCK' " +
     	       "AND a.symbol is not null " +

@@ -124,17 +124,6 @@ public class NotificationController {
                                  .body(AppResponse.error(RspCode.NOT_FOUND)); 
         }
     }
-    
-    /**
-     * 6. 取得系統公告未讀數 (GET)
-     * 💡 用於前端 Navbar 紅點顯示數字
-     */
-    @GetMapping("/unread-count")
-    public AppResponse<Long> getUnreadCountOld(@RequestParam("userId") Long userId) {
-        // 直接調用 service 計算 (總數 - 已讀數)
-        long count = notificationService.getUnreadCount(userId);
-        return AppResponse.success(count);
-    }
 
     /**
      * 6. 取得通知未讀數 (GET)，新增個人未讀 (系統通知+個人通知)

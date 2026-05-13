@@ -122,6 +122,7 @@ public class SecurityConfig {
                 .requestMatchers("/send-email").permitAll()
                 .requestMatchers("/api/health/**").permitAll()
                 .requestMatchers("/api/asset-history/**").permitAll()
+                .requestMatchers("/api/liabilities/**").permitAll()
 
 
                 .anyRequest().authenticated()
