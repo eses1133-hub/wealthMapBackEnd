@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +13,9 @@ import org.springframework.stereotype.Service;
 import com.example.demo.dto.AssetGrowthDTO;
 import com.example.demo.dto.HealthResponseDTO;
 import com.example.demo.entity.Asset;
+import com.example.demo.entity.AssetHistory;
 import com.example.demo.entity.Liability;
+import com.example.demo.repository.AssetHistoryRepository;
 import com.example.demo.repository.AssetRecordRepository;
 import com.example.demo.repository.LiabilityRepository;
 
@@ -24,6 +27,9 @@ public class HealthService {
 
 	@Autowired
 	private LiabilityRepository liabilityRepository;
+
+	@Autowired
+	private AssetHistoryRepository assetHistoryRepository;
 
 	public HealthResponseDTO calculate(Long userId) {
 
@@ -59,7 +65,7 @@ public class HealthService {
 
 		double monthlyPayment = liabilities.stream()
 				.mapToDouble(d -> Optional.ofNullable(d.getMonthlyPayment()).orElse(0.0)).sum();
-		
+
 		// ===== 每月支出 =====
 		double expense = assets.stream().filter(a -> "EXPENSE".equals(a.getType()))
 				.mapToDouble(a -> Optional.ofNullable(a.getAmount()).orElse(0.0)).sum();
@@ -109,9 +115,9 @@ public class HealthService {
 
 	public List<AssetGrowthDTO> getAssetGrowth(Long userId) {
 
-		List<Object[]> rawData = assetRecordRepository.getMonthlyAssets(userId);
-
 		List<AssetGrowthDTO> result = new ArrayList<>();
+
+		List<Object[]> rawData = assetHistoryRepository.getMonthlyAssets(userId);
 
 		double previous = 0;
 
@@ -126,7 +132,6 @@ public class HealthService {
 			if (previous > 0) {
 
 				growth = ((total - previous) / previous) * 100;
-
 			}
 
 			result.add(new AssetGrowthDTO(month, Math.round(growth * 10.0) / 10.0));

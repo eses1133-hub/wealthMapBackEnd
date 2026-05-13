@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.example.demo.entity.AssetHistory;
@@ -21,4 +22,13 @@ public interface AssetHistoryRepository extends JpaRepository<AssetHistory, Long
     // 用於畫折線圖：按日期升序抓取使用者的歷史紀錄
     List<AssetHistory> findByUserIdOrderByRecordDateAsc(@Param("userId") Long userId);
     
+    @Query("""
+    		SELECT DATE_FORMAT(a.recordDate, '%Y/%m'),
+    		       MAX(a.totalAmount)
+    		FROM AssetHistory a
+    		WHERE a.userId = :userId
+    		GROUP BY DATE_FORMAT(a.recordDate, '%Y/%m')
+    		ORDER BY DATE_FORMAT(a.recordDate, '%Y/%m')
+    		""")
+    		List<Object[]> getMonthlyAssets(@Param("userId") Long userId);
 }
