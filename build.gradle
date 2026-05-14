@@ -14,6 +14,10 @@ java {
 	}
 }
 
+springBoot {
+	mainClass = 'com.example.demo.WealthmapApplication'
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor

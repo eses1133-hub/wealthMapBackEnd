@@ -1,0 +1,13 @@
+.git
+.gradle
+.settings
+bin
+build
+target
+*.log
+*.class
+*.jar
+*.war
+*.zip
+hs_err_pid*
+replay_pid*
