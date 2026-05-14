@@ -40,6 +40,9 @@ public class UserProfileDTO {
         private String type;
         private String symbol;
         private Double amount;
+        private Double shares;
+        private Double cost;
+        
     }
     @Data 
     public static class InvestmentDTO {
