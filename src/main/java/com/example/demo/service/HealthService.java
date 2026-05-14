@@ -74,14 +74,14 @@ public class HealthService {
 				.mapToDouble(a -> Optional.ofNullable(a.getAmount()).orElse(0.0)).sum();
 
 		// ===== 財務指標 =====
-		double L = expense > 0 ? Math.min(netWorth / expense, 6) : 0;
+		double L = expense > 0 ? Math.max(0, Math.min(netWorth / expense, 6)) : 0;
 
-		double DTI = monthlyPayment > 0 ? Math.min((monthlyPayment / income) * 100, 100) : 0;
+		double DTI = monthlyPayment > 0 ? Math.max(0, Math.min((monthlyPayment / income) * 100, 100)) : 0;
 
-		double S = expense > 0 ? ((income - expense) / income) * 100 : 0;
+		double S = expense > 0 ? Math.max(0, Math.min((((income - expense) / income) * 100), 100)) : 0;
 
 		// ===== 分數 =====
-		double score = Math.min(calculateScore(L, DTI, S), 100);
+		double score = Math.max(0, Math.min(calculateScore(L, DTI, S), 100));
 
 		// ===== 等級 =====
 		String level = calculateLevel(score);
@@ -144,9 +144,32 @@ public class HealthService {
 
 	private double calculateScore(double L, double DTI, double S) {
 
-		// 👉 簡單權重（可調整🔥）
-		double lScore = Math.min(L, 6) * 10; // 上限60
-//		double dtiScore = Math.max(0, 100 - DTI); // 越低越好
+		int warningCount = 0;
+
+		// ===== 緊急預備金警告 =====
+		if (L < 3) {
+			warningCount++;
+		}
+
+		// ===== 負債比警告 =====
+		if (DTI >= 70) {
+			warningCount++;
+		}
+
+		// ===== 儲蓄率警告 =====
+		if (S < 20) {
+			warningCount++;
+		}
+
+		// ===== 兩個以上警告 → 直接危機 =====
+		if (warningCount >= 2) {
+			return 0;
+		}
+
+		// ===== 原本計算 =====
+
+		double lScore = Math.min(L, 6) * 10;
+
 		double dtiScore;
 
 		if (DTI <= 20) {
@@ -158,7 +181,8 @@ public class HealthService {
 		} else {
 			dtiScore = 20;
 		}
-		double sScore = Math.max(0, S); // 越高越好
+
+		double sScore = Math.max(0, S);
 
 		return (lScore * 0.35) + (dtiScore * 0.3) + (sScore * 0.35);
 	}
