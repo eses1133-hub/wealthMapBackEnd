@@ -74,7 +74,7 @@ public class HealthService {
 				.mapToDouble(a -> Optional.ofNullable(a.getAmount()).orElse(0.0)).sum();
 
 		// ===== 財務指標 =====
-		double L = expense > 0 ? Math.max(0, Math.min(netWorth / expense, 6)) : 0;
+		double L = expense > 0 ? Math.max(0, Math.min(totalAssets / (expense + monthlyPayment), 6)) : 0;
 
 		double DTI = monthlyPayment > 0 ? Math.max(0, Math.min((monthlyPayment / income) * 100, 100)) : 0;
 
@@ -108,7 +108,7 @@ public class HealthService {
 		System.out.println("儲蓄率=" + S);
 		System.out.println("分數=" + score);
 		System.out.println("收入=" + income);
-		System.out.println("支出=" + expense);
+		System.out.println("月支出=" + expense);
 		System.out.println("月負債=" + monthlyPayment);
 		return dto;
 	}
