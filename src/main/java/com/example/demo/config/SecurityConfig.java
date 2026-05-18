@@ -55,7 +55,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                 
                 // 💡 修正點：同時放行 /api/users/details、/api/users/details/ 以及 /api/users/details/**
-                .requestMatchers("/api/users/details", "/api/users/details/**").permitAll()
+//                .requestMatchers("/api/users/details", "/api/users/details/**").permitAll()
+             // 改成這行全新的（包含單數、複數、任何子路徑）：
+                .requestMatchers("/api/users/details", "/api/users/details**", "/api/user/details", "/api/user/details**").permitAll()
                 
                 .requestMatchers("/api/auth/send-mail").permitAll()      
                 .requestMatchers("/error").permitAll()
