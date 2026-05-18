@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
 @RequestMapping("/api/sse")
-@CrossOrigin(origins = "http://localhost:4200") // 允許 Angular 存取
+@CrossOrigin(origins = {"http://localhost:4200", "https://wealthmap-jingyi-20260514.netlify.app"}) // 允許 Angular 存取
 public class SseController {
 	private final NotificationService notificationService;
 

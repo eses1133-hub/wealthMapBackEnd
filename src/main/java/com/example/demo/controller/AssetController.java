@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/assets") 
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true") 
+@CrossOrigin(origins = {"http://localhost:4200", "https://wealthmap-jingyi-20260514.netlify.app"}, allowCredentials = "true") 
 public class AssetController {
 
     @Autowired

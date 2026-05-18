@@ -24,7 +24,7 @@ import com.example.demo.vo.RspCode;
 */
 @RestController
 @RequestMapping("/api/portfolio")
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:4200", "https://wealthmap-jingyi-20260514.netlify.app"}, allowCredentials = "true")
 public class PortfolioController {
 
     @Autowired

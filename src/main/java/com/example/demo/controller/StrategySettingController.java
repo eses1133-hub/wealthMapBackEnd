@@ -34,7 +34,7 @@ import com.example.demo.dto.StrategyResponseDTO;
 
 @RestController
 @RequestMapping("/api/strategy-set")
-@CrossOrigin(origins = "http://localhost:4200") // 允許 Angular 存取
+@CrossOrigin(origins = {"http://localhost:4200", "https://wealthmap-jingyi-20260514.netlify.app"}) // 允許 Angular 存取
 public class StrategySettingController {
 
 	@Autowired
