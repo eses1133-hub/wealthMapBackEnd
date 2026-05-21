@@ -1,0 +1,9 @@
+[phases.build]
+cmds = [
+  "gradle wrapper --gradle-version 9.3.1",
+  "chmod +x gradlew",
+  "./gradlew clean build -x check -x test -Pproduction"
+]
+
+[start]
+cmd = "java $JAVA_OPTS -jar -Dserver.port=$PORT $(ls -1 build/libs/*.jar | grep -v plain)"
