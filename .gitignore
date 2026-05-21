@@ -26,3 +26,4 @@ replay_pid*
 
 # 忽略 Spring Boot 設定檔
 application.properties
+!Dockerfile
