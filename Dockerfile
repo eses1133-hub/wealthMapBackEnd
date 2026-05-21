@@ -1,7 +1,8 @@
-FROM gradle:8.9-jdk21 AS build
+FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
 COPY . .
-RUN gradle bootJar -x test --no-daemon
+RUN chmod +x gradlew
+RUN ./gradlew bootJar -x test --no-daemon
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
