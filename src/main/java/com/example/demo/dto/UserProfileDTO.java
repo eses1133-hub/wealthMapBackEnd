@@ -25,6 +25,7 @@ public class UserProfileDTO {
     private String email;
     private String role;
     private String riskLevel;
+    private boolean enabled;
     
     private List<AssetDTO> assets;
     private List<InvestmentDTO> investments;
@@ -39,6 +40,9 @@ public class UserProfileDTO {
         private String type;
         private String symbol;
         private Double amount;
+        private Double shares;
+        private Double cost;
+        
     }
     @Data 
     public static class InvestmentDTO {

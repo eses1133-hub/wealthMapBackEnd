@@ -78,6 +78,7 @@ public class UserController {
                     dto.setEmail(user.getEmail());
                     dto.setRole(user.getRole());
                     dto.setRiskLevel(user.getRiskLevel());
+                    dto.setEnabled(user.getEnabled());
 
                     // 轉換資產 Assets
                     dto.setAssets(user.getAssets().stream().map(a -> {
@@ -87,6 +88,8 @@ public class UserController {
                         adto.setSymbol(a.getSymbol());
                         adto.setType(a.getType()); 
                         adto.setAmount(a.getAmount());
+                        adto.setShares(a.getShares());
+                        adto.setCost(a.getCost());
                         return adto;
                     }).toList());
                     

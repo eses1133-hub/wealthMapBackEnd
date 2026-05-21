@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -9,10 +10,12 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.dto.AssetGrowthDTO;
 import com.example.demo.dto.HealthResponseDTO;
 import com.example.demo.entity.Asset;
-import com.example.demo.entity.Debt;
+import com.example.demo.entity.AssetHistory;
 import com.example.demo.entity.Liability;
+import com.example.demo.repository.AssetHistoryRepository;
 import com.example.demo.repository.AssetRecordRepository;
 import com.example.demo.repository.LiabilityRepository;
 
@@ -24,6 +27,9 @@ public class HealthService {
 
 	@Autowired
 	private LiabilityRepository liabilityRepository;
+
+	@Autowired
+	private AssetHistoryRepository assetHistoryRepository;
 
 	public HealthResponseDTO calculate(Long userId) {
 
@@ -37,6 +43,13 @@ public class HealthService {
 		boolean hasAsset = !assets.isEmpty();
 
 		boolean hasLiability = !liabilities.isEmpty();
+		if (!hasAsset && !hasLiability) {
+			return new HealthResponseDTO(0, // L
+					0, // DTI
+					0, // S
+					0, // score
+					false, false, 0, 0);
+		}
 
 		// ===== 資產 =====
 		double totalAssets = assets.stream().mapToDouble(a -> Optional.ofNullable(a.getAmount()).orElse(0.0)).sum();
@@ -50,35 +63,25 @@ public class HealthService {
 		// ===== 現金（流動資產）=====
 		double cash = assets.stream().mapToDouble(d -> Optional.ofNullable(d.getAmount()).orElse(0.0)).sum();
 
-		// ===== 每月支出（用負債月付當基礎）=====
-		double expense = liabilities.stream().mapToDouble(d -> Optional.ofNullable(d.getMonthlyPayment()).orElse(0.0))
-				.sum();
-
-		if (expense == 0) {
-			expense = totalAssets * 0.40; // 🔥 假設支出 = 資產40%
-		}
-
-		// ===== 收入（暫時假設）=====
-		double income = estimateIncome(assets, liabilities); // 可替換成 UserProfile
-
-		if (income == 0) {
-			income = expense * 2; // 🔥 假設收入 = 支出2倍
-		}
-
-		double monthlyDebt = liabilities.stream()
+		double monthlyPayment = liabilities.stream()
 				.mapToDouble(d -> Optional.ofNullable(d.getMonthlyPayment()).orElse(0.0)).sum();
 
+		// ===== 每月支出 =====
+		double expense = assets.stream().filter(a -> "EXPENSE".equals(a.getType()))
+				.mapToDouble(a -> Optional.ofNullable(a.getAmount()).orElse(0.0)).sum();
+
+		double income = assets.stream().filter(a -> "INCOME".equals(a.getType()))
+				.mapToDouble(a -> Optional.ofNullable(a.getAmount()).orElse(0.0)).sum();
+
 		// ===== 財務指標 =====
-		double L = expense > 0 ? cash / expense : 0;
+		double L = expense > 0 ? Math.max(0, Math.min(totalAssets / (expense + monthlyPayment), 6)) : 0;
 
-		double DTI = totalLiabilities > 0 ? ((totalLiabilities / 12) / (totalAssets / 12)) * 100 : 0;
+		double DTI = monthlyPayment > 0 ? Math.max(0, Math.min((monthlyPayment / income) * 100, 100)) : 0;
 
-		double S = expense > 0 ? (totalAssets / expense) * 100 : 0;
-
-		double G = 85; // 先保留
+		double S = expense > 0 ? Math.max(0, Math.min((((income - expense) / income) * 100), 100)) : 0;
 
 		// ===== 分數 =====
-		double score = calculateScore(L, DTI, S);
+		double score = Math.max(0, Math.min(calculateScore(L, DTI, S), 100));
 
 		// ===== 等級 =====
 		String level = calculateLevel(score);
@@ -94,78 +97,138 @@ public class HealthService {
 		List<String> advice = generateAdvice(L, DTI, S, netWorth);
 
 		// ===== 回傳 =====
-		HealthResponseDTO dto = new HealthResponseDTO(L, DTI, S, G, score, hasAsset, hasLiability, totalAssets,
+		HealthResponseDTO dto = new HealthResponseDTO(L, DTI, S, score, hasAsset, hasLiability, totalAssets,
 				totalLiabilities);
 		// 🔥 補上你原本算但沒回傳的資料
 		dto.setAssetDistribution(assetDistribution);
 		dto.setLiabilityDistribution(liabilityDistribution);
-		dto.setAdvice(advice);	
+		dto.setAdvice(advice);
+		System.out.println("緊急預備金=" + L);
+		System.out.println("負債比=" + DTI);
+		System.out.println("儲蓄率=" + S);
+		System.out.println("分數=" + score);
+		System.out.println("收入=" + income);
+		System.out.println("月支出=" + expense);
+		System.out.println("月負債=" + monthlyPayment);
 		return dto;
 	}
 
-	private double estimateIncome(List<Asset> assets, List<Liability> liabilities) {
-		// 👉 暫時假設：收入 = 月負債 * 2（你可以改成從 User 表抓）
-		double monthlyDebt = liabilities.stream()
-				.mapToDouble(d -> Optional.ofNullable(d.getMonthlyPayment()).orElse(0.0)).sum();
+	public List<AssetGrowthDTO> getAssetGrowth(Long userId) {
 
-		return monthlyDebt * 2;
+		List<AssetGrowthDTO> result = new ArrayList<>();
+
+		List<Object[]> rawData = assetHistoryRepository.getMonthlyAssets(userId);
+
+		double previous = 0;
+
+		for (Object[] row : rawData) {
+
+			String month = (String) row[0];
+
+			double total = ((Number) row[1]).doubleValue();
+
+			double growth = 0;
+
+			if (previous > 0) {
+
+				growth = ((total - previous) / previous) * 100;
+			}
+
+			result.add(new AssetGrowthDTO(month, Math.round(growth * 10.0) / 10.0));
+
+			previous = total;
+		}
+
+		return result;
 	}
 
 	private double calculateScore(double L, double DTI, double S) {
 
-		// 👉 簡單權重（可調整🔥）
-		double lScore = Math.min(L, 6) * 10; // 上限60
-		double dtiScore = Math.max(0, 100 - DTI); // 越低越好
-		double sScore = Math.max(0, S); // 越高越好
+		int warningCount = 0;
 
-		return (lScore * 0.3) + (dtiScore * 0.4) + (sScore * 0.3);
+		// ===== 緊急預備金警告 =====
+		if (L < 3) {
+			warningCount++;
+		}
+
+		// ===== 負債比警告 =====
+		if (DTI >= 70) {
+			warningCount++;
+		}
+
+		// ===== 儲蓄率警告 =====
+		if (S < 20) {
+			warningCount++;
+		}
+
+		// ===== 兩個以上警告 → 直接危機 =====
+		if (warningCount >= 2) {
+			return 0;
+		}
+
+		// ===== 原本計算 =====
+
+		double lScore = Math.min(L, 6) * 10;
+
+		double dtiScore;
+
+		if (DTI <= 20) {
+			dtiScore = 100;
+		} else if (DTI <= 40) {
+			dtiScore = 80;
+		} else if (DTI <= 60) {
+			dtiScore = 50;
+		} else {
+			dtiScore = 20;
+		}
+
+		double sScore = Math.max(0, S);
+
+		return (lScore * 0.35) + (dtiScore * 0.3) + (sScore * 0.35);
 	}
 
 	private String calculateLevel(double score) {
-		if (score >= 80)
+		if (score >= 90)
 			return "健康";
-		if (score >= 60)
-			return "普通";
+		if (score >= 70)
+			return "穩定";
 		return "危險";
 	}
 
 	private List<String> generateAdvice(double L, double DTI, double S, double netWorth) {
 
 		List<String> advice = new ArrayList<>();
-		
-		if (L >= 12) 
+
+		if (L >= 12)
 			advice.add("預備金極為充裕，可考慮更積極的資產配置。");
 		else if (L >= 6)
-			advice.add ("預備金充足，可支撐長期投資佈局。");
+			advice.add("預備金充足，可支撐長期投資佈局。");
 		else if (L >= 3)
-			advice.add ("預備金尚可，足以應付短期突發狀況。");
+			advice.add("預備金尚可，足以應付短期突發狀況。");
 		else {
 			advice.add("預備金嚴重不足，應暫緩投資並優先儲蓄。");
 		}
 
-
-		if (DTI <= 15) 
-			advice.add ("槓桿比例健康，具備良好抗風險空間。");
+		if (DTI <= 15)
+			advice.add("槓桿比例健康，具備良好抗風險空間。");
 		else if (DTI <= 30)
-			advice.add ( "負債尚在可控範圍，建議檢視非必要支出。");
+			advice.add("負債尚在可控範圍，建議檢視非必要支出。");
 		else if (DTI <= 45)
-			advice.add ( "負債尚在可控範圍，建議檢視非必要支出。");
+			advice.add("負債尚在可控範圍，建議檢視非必要支出。");
 		else {
-			advice.add (  "負債壓力沉重，需立即優化債務結構。");
+			advice.add("負債壓力沉重，需立即優化債務結構。");
 		}
-		
 
 		if (S >= 60)
 			advice.add("儲蓄力強勁，現金流充裕。");
 		else if (S >= 40)
 			advice.add("儲蓄表現優異，資本累積速度理想。");
 		else if (S >= 20)
-			advice.add( "儲蓄水平正常，建議維持固定撥存習慣。");
+			advice.add("儲蓄水平正常，建議維持固定撥存習慣。");
 		else {
-			advice.add ("儲蓄率偏低，建議強制執行儲蓄計畫。");
+			advice.add("儲蓄率偏低，建議強制執行儲蓄計畫。");
 		}
-		
-		
+
 		if (netWorth < 0) {
 			advice.add("淨資產為負，建議優先降低負債");
 		}

@@ -83,6 +83,20 @@ public class ApiController {
 		}
 	}
 	
+	
+	
+	// 抓取台股總覽列表 for 手動測試
+	@GetMapping("/update-asset-stock")
+	public String updateAssetStock() {
+		try {
+			assetRepository.updateStockAssetsAmount();
+			return "資產股價更新成功！";
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "資產股價更新失敗: " + e.getMessage();
+		}
+	}
+	
 	// 輸入股票代碼帶出代碼名稱
 	// put in AssetController
 //	@GetMapping("/search-stock/{stock_id}")

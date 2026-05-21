@@ -1,11 +1,14 @@
 package com.example.demo.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +21,8 @@ import com.example.demo.dto.ChangePasswordDTO;
 import com.example.demo.dto.LoginDTO;
 import com.example.demo.dto.LoginResponseDTO;
 import com.example.demo.dto.RegisterDTO;
+import com.example.demo.dto.UserAdminViewDTO;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AuthService;
 import com.example.demo.service.EmailService;
 import com.example.demo.vo.AppResponse;
@@ -46,6 +51,9 @@ public class AuthController {
 
 	@Autowired
 	private AuthService authService;
+	
+	@Autowired
+	private UserRepository userRepository;
 
 	/**
 	 * 【登入入口 - 領取今日魔法手環】 已經有會員身分的遊客，憑信箱與密碼來換取手環。
@@ -107,4 +115,54 @@ public class AuthController {
 	    
 	    return AppResponse.success("修改成功");
 	}
+	
+	//管理者的全使用者清單
+	@GetMapping("/user-list")
+	public AppResponse<List<UserAdminViewDTO>> getAllUsers(Authentication auth) {
+        // 1. 從 Token 中獲取目前登入者的權限
+//        boolean isAdmin = auth.getAuthorities().stream()
+//                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+//
+//        if (!isAdmin) {
+//            return AppResponse.error(RspCode.FORBIDDEN, "權限不足，僅限管理員查看");
+//        }
+
+        // 2. 撈取所有使用者並轉換為輕量級 DTO
+        List<UserAdminViewDTO> userList = userRepository.findAll().stream()
+                .map(user -> {
+                	UserAdminViewDTO dto = new UserAdminViewDTO();
+                    dto.setId(user.getId());
+                    dto.setName(user.getName());
+                    dto.setEmail(user.getEmail());
+                    dto.setRole(user.getRole());
+                    dto.setRiskLevel(user.getRiskLevel());
+                    dto.setEnabled(user.getEnabled()); // 這是你預計新增的狀態欄位
+                    return dto;
+                }).toList();
+
+        return AppResponse.success(userList);
+    }
+	
+	// 停用或啟用使用者帳號
+    @PatchMapping("/{userId}/enabled")
+    public AppResponse<String> toggleUserEnabled(@PathVariable("userId") Long userId, Authentication auth) {
+        // 1. 安全檢查：同樣只允許管理員操作
+//        boolean isAdmin = auth.getAuthorities().stream()
+//                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+//
+//        if (!isAdmin) {
+//            return AppResponse.error(RspCode.FORBIDDEN, "權限不足，無法變更使用者狀態");
+//        }
+
+        // 2. 執行狀態切換
+        return userRepository.findById(userId).map(user -> {
+            // 反轉目前的狀態 (!true = false, !false = true)
+            user.setEnabled(!user.getEnabled());
+            userRepository.save(user);
+            
+            String status = user.getEnabled() ? "啟用" : "停用";
+            return AppResponse.success("使用者 [" + user.getName() + "] 已成功" + status);
+        }).orElse(AppResponse.error(RspCode.NOT_FOUND, "找不到該使用者"));
+    }
+	
 }
