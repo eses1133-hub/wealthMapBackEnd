@@ -32,7 +32,7 @@ import jakarta.validation.Valid;
 
 @RequestMapping("/api/risk")
 
-@CrossOrigin(origins = "http://localhost:4200", "https://wealth-map-front-end.vercel.app", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:4200", "https://wealth-map-front-end.vercel.app"}, allowCredentials = "true")
 
 public class RiskController {
 

@@ -11,7 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/monte")
-@CrossOrigin(origins = "http://localhost:4200", "https://wealth-map-front-end.vercel.app", allowedHeaders = "*") 
+@CrossOrigin(origins = {"http://localhost:4200", "https://wealth-map-front-end.vercel.app"}, allowedHeaders = "*") 
 public class MonteController {
 	
     @Autowired

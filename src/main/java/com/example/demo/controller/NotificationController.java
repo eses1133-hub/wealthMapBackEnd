@@ -35,7 +35,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/notifications")
-@CrossOrigin(origins = "http://localhost:4200", "https://wealth-map-front-end.vercel.app", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:4200", "https://wealth-map-front-end.vercel.app"}, allowCredentials = "true")
 public class NotificationController {
 	
 	@Configuration

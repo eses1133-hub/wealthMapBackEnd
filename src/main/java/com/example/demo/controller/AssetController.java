@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/assets") 
-@CrossOrigin(origins = "http://localhost:4200", "https://wealth-map-front-end.vercel.app", allowCredentials = "true") 
+@CrossOrigin(origins = {"http://localhost:4200", "https://wealth-map-front-end.vercel.app"}, allowCredentials = "true") 
 public class AssetController {
 
     @Autowired

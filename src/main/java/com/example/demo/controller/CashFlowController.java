@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/cash-flows")
-@CrossOrigin(origins = "http://localhost:4200", "https://wealth-map-front-end.vercel.app", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:4200", "https://wealth-map-front-end.vercel.app"}, allowCredentials = "true")
 public class CashFlowController {
 
     @Autowired
