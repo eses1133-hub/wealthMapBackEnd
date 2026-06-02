@@ -44,7 +44,6 @@ WealthMap 後端系統（個人財務與資產配置平台 API）
 ## 財務健康分析引擎
 計算使用者財務健康分數，包含：
 - 負債比
-- 理財成就率
 - 緊急預備金
 - 儲蓄率
 
@@ -84,7 +83,7 @@ WealthMap 後端系統（個人財務與資產配置平台 API）
 
 ---
 
-# 資料與架構設計（可延伸）
+# 資料與架構設計
 - 關聯式資料庫設計
 - 資產 / 負債 / 目標資料模型
 - 財務計算服務層（Service Layer）
@@ -92,11 +91,10 @@ WealthMap 後端系統（個人財務與資產配置平台 API）
 
 ---
 
-# 技術建議（依實作補）
+# 技術建議
 - ASP.NET Core / Java Spring Boot
 - RESTful API
 - JWT Authentication
 - Background Job（排程通知）
-- Swagger API 文件
 
 ---
